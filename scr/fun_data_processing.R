@@ -66,6 +66,7 @@ read_sirtrack <- function(file){
   # load libraries
   library(dplyr)
   library(stringr)
+  library(lubridate)
   
   # import file
   df <- read.csv(file)

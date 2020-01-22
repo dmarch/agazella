@@ -35,7 +35,7 @@ table(cardona$ptt)
 Data processed by Cardona has excluded one tag (PTT 64529) and reduced number of fixes (eg. pre-deployment dates). Use this dataset to combine with raw data
 
 ```{r}
-data <- merge(cardona, raw, by=c("ptt", "date"), all.x=TRUE)
+data <- merge(cardona, raw, by=c("ptt", "date"))
 ```
 
 
