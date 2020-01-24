@@ -1,6 +1,8 @@
 ---
 title: "Processing of location data"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 
@@ -13,43 +15,43 @@ source("scr/fun_data_processing.R")
 
 
 
-# Data preparation
+# Prepare data
 
-Import raw data from Sirtrack
-
-```{r}
-file <- "data/telemetriaTodos.csv"
-raw <- read_sirtrack(file)
-table(raw$ptt)
-```
-
-Import data processed by Lluis Cardona. This data contains habitat classification using Google Earth imagery (1=land;2=water;3=ice), and has been filtered by time after deployment date.
+Import data processed by Lluis Cardona. This data contains habitat classification using Google Earth imagery (1=land;2=water;3=ice), and has been filtered by time after deployment date. Note this is not the raw data from Sirtrack.
 
 ```{r}
 file <- "data/TelemetriaPPT.xlsx"
-cardona <- read_agazella(file)  # takes time
-table(cardona$ptt)
+df <- read_agazella(file)  # takes time
+table(df$ptt)
 ```
 
 
-Data processed by Cardona has excluded one tag (PTT 64529) and reduced number of fixes (eg. pre-deployment dates). Use this dataset to combine with raw data
+# Reestructure data
+
+Next steps of processing are conducted at an individual level. Therefore, it is more covinient to store separate files for each animal. We will create a separate folder for each one, where we will keep all the derived outputs.
+
+
+
+
+
+
+# Filter data
+
+Filtering data remove duplicate time stamps, Argos location classes Z, unrealistic speeds
+
+
+
+
+
+
+
+# Visualize data
 
 ```{r}
-data <- merge(cardona, raw, by=c("ptt", "date"))
+library(move)
+# convert to move object
+mdata <- move(x=df$lon, y=df$lat, time=df$date, 
+                  data=df, proj=CRS("+proj=longlat +ellps=WGS84"), 
+                  animal=df$ptt)
 ```
-
-
-There is a problem: raw data and Excel data may differ in seconds. see example:
-
-6579:64487,6579:64487,2019-02-22,03:28:11,-63.0028,-60.55674,B,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-
-This prevents to combine both sources of data.
-
-
-
-
-joined <- left_join(cardona, raw, by = c("ptt" = "ptt", "date" = "date"))
-
-
-df <- filter(raw, ptt==64487)
 

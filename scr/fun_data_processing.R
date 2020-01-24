@@ -18,6 +18,25 @@ read_agazella <- function(file){
   library(openxlsx)
   library(data.table)
   
+  # custom function embeded
+  xls2degrees <- function(x){
+    # Manipulating data in Excel can generate problems in coordinates because of changes of the
+    # regional system.
+    # This function fixes this issue. But assumes that coordinates are XX.XXXX
+    
+    library(stringr)
+    
+    
+    lon_length <- str_length(x)  # get the length of the string
+    lon_num <- as.numeric(x)  # convert the string to a number
+    dec <- str_detect(x, pattern = "\\.", negate = FALSE)  # identify if there is a decimal separator
+    minus <- str_detect(x, pattern = "-", negate = FALSE)  # identify if there is a negative coordinate
+    decimals <- ifelse(minus == "TRUE", lon_length-3, lon_length-2)  # define number of decimals
+    lon <- ifelse(dec == "TRUE", lon_num, lon_num/10^(decimals))
+    
+    return(lon)
+  }
+  
   # 1. Get the list of all sheets 
   sheet_names <- getSheetNames(file)
   
@@ -34,9 +53,11 @@ read_agazella <- function(file){
     options(digits=20)
     df$date <- df$UTC_Date + df$UTC_Time
     df$date <- as.POSIXct(df$date*3600*24, tz="GMT", origin = "1900-01-01 00:00:00") -(2*3600*24)
-
+    options(digits=7)  # return to default value
+    
+    
     # select columns
-    df <- select(df, ptt = Tag_ID, date = date, lon = Longitude, lat = Latitude, lc = Location.Quality, habitat = `Habitat(1=land;2=water;.3=.ice)`)
+    df <- dplyr::select(df, ptt = Tag_ID, date = date, lon = Longitude, lat = Latitude, lc = Location.Quality, habitat = `Habitat(1=land;2=water;.3=.ice)`)
     
     # extract ptt number
     df$ptt <- as.numeric(sub('.*\\:', '', df$ptt))
@@ -44,6 +65,10 @@ read_agazella <- function(file){
     # remove row without location data
     df <- dplyr::filter(df, !is.na(lon))
     
+    # fix coordinates problems
+    df$lon <- xls2degrees(df$lon)
+    df$lat <- xls2degrees(df$lat)
+
     # append to data_list
     data_list[[i]] <- df
   }
@@ -85,3 +110,99 @@ read_sirtrack <- function(file){
   df <- dplyr::filter(df, !is.na(lon))
   return(df)
 }
+
+
+#---------------------------------------------------------------------
+# L02L1_sdl     Function to convert L0 to L1 location using SDLfilter
+#---------------------------------------------------------------------
+L02L1_sdl <- function (data, vmax = 40, step.time = 5/60, step.dist = 0.001){
+  
+  require(SDLfilter)
+  
+  
+  ## Keep original number of locations
+  loc0 <- nrow(data)
+  
+  ## Convert standard format to SDLfilter
+  
+  # Standardize Location clasess
+  data$lc <- as.character(data$lc)
+  data$lc[data$lc == "A"] <- -1 
+  data$lc[data$lc == "B"] <- -2
+  data$lc[data$lc == "Z"] <- -9
+  data$lc <- as.numeric(data$lc)
+  
+  # Rename columns
+  names(data)[names(data)=="ptt"] <- "id"
+  names(data)[names(data)=="date"] <- "DateTime"
+  names(data)[names(data)=="lc"] <- "qi"
+  
+  # ### Filter point on land
+  # data$onland <- point.on.land(lat = data$lat, lon = data$lon)
+  # data <- filter(data, onland == FALSE)
+  
+  ### Remove duplicated locations, based on both time and space criteria
+  data <- dupfilter(data, step.time=step.time, step.dist=step.dist, conditional = FALSE)
+  
+  ## Filter out Z location classess
+  data <- filter(data, qi > -9)
+  
+  ## Filter out values above speed threshold, considering both previous and subsequent positions
+  data <- ddfilter.speed(data, vmax = vmax, method = 1)
+  
+  ## Estimate vmax from data
+  V <- est.vmax(data, qi = 1)
+  
+  ## Back transform data.frame to standar format
+  
+  # Rename columns
+  names(data)[names(data)=="id"] <- "ptt"
+  names(data)[names(data)=="DateTime"] <- "date"
+  names(data)[names(data)=="qi"] <- "lc"
+  
+  # Standardize Location clasess
+  data$lc[data$lc == -1] <- "A" 
+  data$lc[data$lc == -2] <- "B"
+  
+  ## Create a data.frame with processing report data
+  proc <- data.frame(ptt = data$ptt[1], locL0 = loc0, locL1 = nrow(data),
+                     percent_filtered = round(((loc0-nrow(data))/loc0)*100, 2), vmax_kmh = V)
+  
+  
+  ## Prepare output
+  out <- list(data = data, proc = proc)
+  return(out)
+  
+  
+  
+}
+#---------------------------------------------------------------------
+
+
+#--------------------------------------------------------------------------------------
+# readTrack       reads standardized animal track data in csv
+#--------------------------------------------------------------------------------------
+readTrack <- function(csvfiles){
+  # Description
+  # Reads a standardized animal track data in csv.
+  # Returns a data frame with parsed time
+  # It allows the combination of multiple files
+  # csvfiles: string with the location of 1 or more csv files
+  
+  library(lubridate)
+  library(data.table)
+  
+  ## create empty list
+  dt_list <- list()  
+  
+  ## process and append files
+  for (i in 1:length(csvfiles)){
+    data <- read.csv(csvfiles[i], header=TRUE)  # read csv
+    data$date <- parse_date_time(data$date, "Ymd HMS") # parse time
+    dt_list[[i]] <- data  # append to list
+  }
+  
+  dt <- rbindlist(dt_list)  # combine data.frames
+  return(dt)
+}
+#--------------------------------------------------------------------------------------
