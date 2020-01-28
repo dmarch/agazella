@@ -4,6 +4,74 @@
 
 
 
+#---------------------------------------------------------------------
+# L02L1_sdl     Function to convert L0 to L1 location using SDLfilter
+#---------------------------------------------------------------------
+L02L1_sdl <- function (data, vmax = 40, step.time = 5/60, step.dist = 0.001){
+  
+  require(SDLfilter)
+  
+  
+  ## Keep original number of locations
+  loc0 <- nrow(data)
+  
+  ## Convert standard format to SDLfilter
+  
+  # Standardize Location clasess
+  data$lc <- as.character(data$lc)
+  data$lc[data$lc == "A"] <- -1 
+  data$lc[data$lc == "B"] <- -2
+  data$lc[data$lc == "Z"] <- -9
+  data$lc <- as.numeric(data$lc)
+  
+  # Rename columns
+  names(data)[names(data)=="ptt"] <- "id"
+  names(data)[names(data)=="date"] <- "DateTime"
+  names(data)[names(data)=="lc"] <- "qi"
+  
+  # ### Filter point on land
+  # data$onland <- point.on.land(lat = data$lat, lon = data$lon)
+  # data <- filter(data, onland == FALSE)
+  
+  ### Remove duplicated locations, based on both time and space criteria
+  data <- dupfilter(data, step.time=step.time, step.dist=step.dist, conditional = FALSE)
+  
+  ## Filter out Z location classess
+  data <- filter(data, qi > -9)
+  
+  ## Filter out values above speed threshold, considering both previous and subsequent positions
+  data <- ddfilter.speed(data, vmax = vmax, method = 2)
+  
+  ## If speed from first or last location are above the threshold, then remove them.
+  if (data$sSpeed[1] > vmax) data <- data[-1,]
+  if (data$pSpeed[nrow(data)] > vmax) data <- data[-nrow(data),]
+  
+  ## Estimate vmax from data
+  V <- est.vmax(data, qi = 1)
+  
+  ## Back transform data.frame to standar format
+  
+  # Rename columns
+  names(data)[names(data)=="id"] <- "ptt"
+  names(data)[names(data)=="DateTime"] <- "date"
+  names(data)[names(data)=="qi"] <- "lc"
+  
+  # Standardize Location clasess
+  data$lc[data$lc == -1] <- "A" 
+  data$lc[data$lc == -2] <- "B"
+  
+  ## Create a data.frame with processing report data
+  proc <- data.frame(ptt = data$ptt[1], locL0 = loc0, locL1 = nrow(data),
+                     percent_filtered = round(((loc0-nrow(data))/loc0)*100, 2), vmax_kmh = V)
+  
+  
+  ## Prepare output
+  out <- list(data = data, proc = proc)
+  return(out)
+}
+#---------------------------------------------------------------------
+
+
 
 #----------------------------------------------------------------------
 # read_agazella       Read processed data from Cardona
@@ -111,72 +179,6 @@ read_sirtrack <- function(file){
   return(df)
 }
 
-
-#---------------------------------------------------------------------
-# L02L1_sdl     Function to convert L0 to L1 location using SDLfilter
-#---------------------------------------------------------------------
-L02L1_sdl <- function (data, vmax = 40, step.time = 5/60, step.dist = 0.001){
-  
-  require(SDLfilter)
-  
-  
-  ## Keep original number of locations
-  loc0 <- nrow(data)
-  
-  ## Convert standard format to SDLfilter
-  
-  # Standardize Location clasess
-  data$lc <- as.character(data$lc)
-  data$lc[data$lc == "A"] <- -1 
-  data$lc[data$lc == "B"] <- -2
-  data$lc[data$lc == "Z"] <- -9
-  data$lc <- as.numeric(data$lc)
-  
-  # Rename columns
-  names(data)[names(data)=="ptt"] <- "id"
-  names(data)[names(data)=="date"] <- "DateTime"
-  names(data)[names(data)=="lc"] <- "qi"
-  
-  # ### Filter point on land
-  # data$onland <- point.on.land(lat = data$lat, lon = data$lon)
-  # data <- filter(data, onland == FALSE)
-  
-  ### Remove duplicated locations, based on both time and space criteria
-  data <- dupfilter(data, step.time=step.time, step.dist=step.dist, conditional = FALSE)
-  
-  ## Filter out Z location classess
-  data <- filter(data, qi > -9)
-  
-  ## Filter out values above speed threshold, considering both previous and subsequent positions
-  data <- ddfilter.speed(data, vmax = vmax, method = 1)
-  
-  ## Estimate vmax from data
-  V <- est.vmax(data, qi = 1)
-  
-  ## Back transform data.frame to standar format
-  
-  # Rename columns
-  names(data)[names(data)=="id"] <- "ptt"
-  names(data)[names(data)=="DateTime"] <- "date"
-  names(data)[names(data)=="qi"] <- "lc"
-  
-  # Standardize Location clasess
-  data$lc[data$lc == -1] <- "A" 
-  data$lc[data$lc == -2] <- "B"
-  
-  ## Create a data.frame with processing report data
-  proc <- data.frame(ptt = data$ptt[1], locL0 = loc0, locL1 = nrow(data),
-                     percent_filtered = round(((loc0-nrow(data))/loc0)*100, 2), vmax_kmh = V)
-  
-  
-  ## Prepare output
-  out <- list(data = data, proc = proc)
-  return(out)
-  
-  
-  
-}
-#---------------------------------------------------------------------
 
 
 #--------------------------------------------------------------------------------------
