@@ -5,6 +5,7 @@
 
 library(move)
 library(moveVis)
+source("scr/fun/fun_data_processing.R")
 
 
 # Select location data files
@@ -37,7 +38,7 @@ frames <- frames_spatial(m,  # move object
                          map_service = "carto", map_type = "voyager_no_labels",  # base map
                          path_size = 2, alpha = 0.5) %>%  # path
   add_labels(x = "Longitude", y = "Latitude") %>% # add some customizations
-  add_scalebar(colour = "black", position = "bottomleft") %>% 
+  add_scalebar(colour = "black", position = "bottomright") %>% 
   add_timestamps(m, type = "label") %>% 
   add_progress(size = 2)
 
@@ -75,7 +76,7 @@ for(i in loc_file){
                            map_service = "carto", map_type = "voyager_no_labels",  # base map
                            path_size = 2, alpha = 0.5) %>%  # path
     add_labels(x = "Longitude", y = "Latitude") %>% # add some customizations
-    add_scalebar(colour = "black", position = "bottomleft") %>% 
+    add_scalebar(colour = "black", position = "bottomright") %>% 
     add_timestamps(m, type = "label") %>% 
     add_progress(size = 2)
 
@@ -83,3 +84,6 @@ for(i in loc_file){
   filename <- paste0("out/animation/", ptt, "_track.mp4")
   animate_frames(frames, out_file = filename, overwrite = TRUE, display = FALSE)
 }
+
+
+# error for this file "out/proc/64515_L1_locations.csv"
