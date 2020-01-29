@@ -43,3 +43,6 @@ vignettes/*.pdf
 
 # Output folder
 /out
+
+# Temp folder
+/temp
