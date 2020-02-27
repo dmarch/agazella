@@ -35,5 +35,5 @@ pat <- paste0("L1_locations.csv")
 loc_file <- list.files("out/proc/", full.names=TRUE, recursive = TRUE, pattern=pat)
 all_l1_tracks <- readTrack(loc_file)
 write.csv(all_l1_tracks, "temp/all_l1_tracks.csv", row.names=FALSE)
-
+all_l1_tracks <- read.csv("temp/all_l1_tracks.csv")
 
