@@ -39,8 +39,8 @@ L02L1_sdl <- function (data, vmax = 40, step.time = 5/60, step.dist = 0.001){
   ## Filter out Z location classess
   data <- filter(data, qi > -9)
   
-  ## Filter out values above speed threshold, considering both previous and subsequent positions
-  data <- ddfilter.speed(data, vmax = vmax, method = 2)
+  ## Filter out values above speed threshold, considering EITHER previous and subsequent positions
+  data <- ddfilter.speed(data, vmax = vmax, method = 1)
   
   ## If speed from first or last location are above the threshold, then remove them.
   if (data$sSpeed[1] > vmax) data <- data[-1,]

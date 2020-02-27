@@ -22,7 +22,7 @@ for(i in ids){
   dataL0 <- subset(df, ptt == i)
   
   # filter locations
-  data_sdl <- L02L1_sdl(data = dataL0, vmax = 28.8, step.time = 5/60, step.dist = 0.001)  # max speed for pinniped is 8 m/s (Ray 1963)
+  data_sdl <- L02L1_sdl(data = dataL0, vmax = 50, step.time = 5/60, step.dist = 0.001)  # speed is in km/h. Max speed for pinniped is 8 m/s (Ray 1963)
   dataL1 <- data_sdl$data
   
   # export processed data
