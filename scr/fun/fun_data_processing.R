@@ -3,6 +3,68 @@
 #------------------------------------------------------------------------------------------
 
 
+#---------------------------------------------------------------------------------
+# extract_raster         Extract data from dynamic variables
+#---------------------------------------------------------------------------------
+extract_raster <- function(varname, date, catalog){
+  # use the catalog as main source to locate where the data is found
+  
+  
+  library(stringr)
+  library(lubridate)
+  
+  # locate product by variable name and date
+  c <- dplyr::filter(catalog, var == varname, as.Date(date) >= date_min & as.Date(date) <= date_max)
+  
+  # get date information
+  YYYY <- year(date)
+  MM <- sprintf("%02d", month(date))
+  DD <- sprintf("%02d", day(date))
+  
+  # get frequency of the product and set threshold
+  # A threshold is define in order to extract data from the closest day/week in case no file available
+  # for a given date
+  freq <- c$temporal_resolution
+  if(freq == "daily") temp_thrs <- 1  # will get data from previous/next day
+  if(freq == "weekly") temp_thrs <- 7  # will get data from previous/next week
+  if(freq == "monthly")  temp_thrs <- 30  # will get data from previous/next month
+  
+  # locate folder
+  repo = c$root
+  service = c$service
+  product = c$product
+  product_folder <- paste(repo, service, product, YYYY, MM, sep="/")  # Set folder
+  
+  # list dates of files
+  variable = as.character(c$variable)
+  folder_files <- list.files(product_folder, full.names=TRUE, patter = variable)  # import to differentiate between vars
+  folder_dates <- ymd(as.numeric(str_extract(folder_files, "\\d{8}")))
+  
+  # find closest date within frequency threshold
+  dif_time <- as.numeric(abs(difftime(as.Date(date), folder_dates, units = "days")))
+  
+  # check that there is data to retrieve
+  if (any(dif_time <= temp_thrs)){
+    
+    # select file
+    sel_dif <- which(dif_time == min(dif_time))[1]  # in case >1 selected (eg. no data for date i, and select both previous and after)
+    file_path <- folder_files[sel_dif]
+    
+    # import file
+    r <- raster(file_path, var=variable)  # open nc
+    
+  } else {
+    r <- NULL
+  }
+  #return extracted data
+  return(r)
+}
+#---------------------------------------------------------------------------------
+
+
+
+
+
 
 #---------------------------------------------------------------------
 # L02L1_sdl     Function to convert L0 to L1 location using SDLfilter
