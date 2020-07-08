@@ -12,10 +12,10 @@ tag_type <- "PTT"
 
 
 # Trip definition
-trip_time_gap <- 7 * 24  # Tracks with data gaps in excess of [seg_time_gap] hours were broken up for separate modeling
+# trip_time_gap <- 7 * 24  # Tracks with data gaps in excess of [seg_time_gap] hours were broken up for separate modeling
 
 # Track selection
-sel_min_loc <- 20  # minimum number of locations
+sel_min_loc <- 10  # minimum number of locations
 sel_min_dur <- 12 # minimum durantion of track, in hours
 sel_exclude <- NULL # custom selection of tags based on exploration of data
 sel_min_dist <- 15
