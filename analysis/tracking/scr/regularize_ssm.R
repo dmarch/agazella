@@ -83,7 +83,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "foieGras", "stringr")) %dopar% 
   # fit SSM
   # we turn sdafilter off because we previously filtered data
   # we run the model with multiple trips at once
-  fit <- fit_ssm(indata, model = "rw", time.step = 24, verbose = 1, spdf = FALSE)
+  fit <- fit_ssm(indata, model = "crw", time.step = reg_time_step, verbose = 0, spdf = FALSE)
   
   # get fitted locations
   # segments that did not converge were not consider
@@ -92,7 +92,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "foieGras", "stringr")) %dopar% 
   data <- cbind(id = i, data)
   
   # check if points on land
-  data$onland <- point_on_land(lat = data$lat, lon = data$lon, land = land)
+  #data$onland <- point_on_land(lat = data$lat, lon = data$lon, land = land)
   
   # export track data into individual folder at output path
   out_file <- paste0(output_data, "/", i, "_L2_locations.csv")

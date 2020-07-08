@@ -108,12 +108,12 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "gridExtra", "grid", "data.table
   # Trim tracks into segments according to temporal gaps
   # This part only applies on Argos data
   if(tag_type == "PTT"){
-    dataL1$trip <- timedif.segment(dataL1$date, thrs = trip_time_gap)
-    dataL1$trip <- paste(i, str_pad(dataL1$trip, 3, pad = "0"), sep="_") 
-    #dataL1$trip <- segmentOnPort(dataL1$habitat)  # generate segments including periods on land
-    #dataL1 <- filter(dataL1, habitat == 2)  # remove periods on land
-    #dataL1$trip <- segmentOnPort(dataL1$trip)  # regenerate trip id
-    #dataL1$trip <- paste(i, str_pad(dataL1$trip, 3, pad = "0"), sep="_")
+    #dataL1$trip <- timedif.segment(dataL1$date, thrs = trip_time_gap)
+    #dataL1$trip <- paste(i, str_pad(dataL1$trip, 3, pad = "0"), sep="_") 
+    dataL1$trip <- segmentOnPort(dataL1$habitat)  # generate segments including periods on land
+    dataL1 <- filter(dataL1, habitat == 2)  # remove periods on land
+    dataL1$trip <- segmentOnPort(dataL1$trip)  # regenerate trip id
+    dataL1$trip <- paste(i, str_pad(dataL1$trip, 3, pad = "0"), sep="_")
   }
 
   # store track data into individual folder at output path
