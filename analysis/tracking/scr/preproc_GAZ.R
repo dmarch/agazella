@@ -73,6 +73,7 @@ foreach(i=db$id, .packages=c("dplyr", "ggplot2", "stringr")) %dopar% {
   ggsave(out_file, p, width=30, height=15, units = "cm")
 }
 
+stopCluster(cl)  # Stop cluster
 
 
 #---------------------------------------------------------------
@@ -90,11 +91,6 @@ idstats <- summarizeId(df)
 out_file <- paste0(output_data, "/", sp_code, "_summary_id.csv")
 write.csv(idstats, out_file, row.names = FALSE)
 
-
-#---------------------------------------------------------------
-# Stop cluster
-#---------------------------------------------------------------
-stopCluster(cl)
 
 print("Pre-processing ready")
 

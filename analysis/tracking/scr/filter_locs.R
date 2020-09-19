@@ -9,8 +9,6 @@
 # - Filter location data: Near-duplicate positions, filter, angle and point on land
 
 
-require("argosfilter")
-
 #---------------------------------------------------------------
 # Prepare cluster
 #---------------------------------------------------------------
@@ -139,6 +137,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "gridExtra", "grid", "data.table
   ggsave(out_file, p, width=30, height=15, units = "cm")
 }
 
+stopCluster(cl) # Stop cluster
 
 #---------------------------------------------------------------
 # 4. Summarize processed data
@@ -154,12 +153,5 @@ idstats <- summarizeId(df)
 # export table
 out_file <- paste0(output_data, "/", sp_code, "_summary_id.csv")
 write.csv(idstats, out_file, row.names = FALSE)
-
-
-#---------------------------------------------------------------
-# Stop cluster
-#---------------------------------------------------------------
-stopCluster(cl)
-
 
 print("Filtering ready")

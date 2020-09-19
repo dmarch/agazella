@@ -8,7 +8,7 @@
 # - Regularize tracks
 
 #devtools::install_github("ianjonsen/foieGras")  # github version fixes problem with GPS
-library("foieGras")
+#library("foieGras")
 
 
 #---------------------------------------------------------------
@@ -112,6 +112,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "foieGras", "stringr")) %dopar% 
   ggsave(out_file, p, width=30, height=15, units = "cm")
 }
   
+stopCluster(cl) # Stop cluster
 
 #---------------------------------------------------------------
 # 4. Summarize processed data
@@ -134,12 +135,6 @@ comb <- merge(tripstats, data_proc, by=c("id", "trip"))
 # export table
 out_file <- paste0(output_data, "/", sp_code, "_summary_ssm.csv")
 write.csv(comb, out_file, row.names = FALSE)
-
-
-#---------------------------------------------------------------
-# Stop cluster
-#---------------------------------------------------------------
-stopCluster(cl)
 
 
 print("Regularization ready")
