@@ -36,10 +36,6 @@ r <- raster(extent(ocean) + 0.5, res = sim_mask_res, crs = crs(ocean))
 # rasterize ocean mask
 rocean <- rasterize(as(ocean,"SpatialPolygons"), r)
 
-# remove gibraltar strait
-# in preliminar simulations it has cul-de-sac effect
-e <- extent(ocean)+c(0.5,0,0,0)
-rocean <- crop(rocean, e)
 
 # Define resistance values (0 = ocean, 1 = land)
 rocean[rocean==1] <- 0

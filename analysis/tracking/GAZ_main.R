@@ -88,6 +88,10 @@ source("analysis/tracking/scr/filter_locs.R")
 # Uses correlated random walk state-space model from Jonsen et al. 2019 doi:10.1002/ecy.2566
 source("analysis/tracking/scr/regularize_ssm.R")
 
-# Step 4. Generate pseudo-absences using simulations for habitat model
+# Step 4. Generate oceanmask
+# Combines MCP from all L2 locations with bathymetry and ice extent
+source("analysis/tracking/scr/oceanmask.R")
+
+# Step 5. Generate pseudo-absences using simulations for habitat model
 # We select individuals that remain within the study area.
 source("analysis/tracking/scr/simulations.R")

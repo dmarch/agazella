@@ -49,7 +49,7 @@ sdist <- rdist
 # sdist <- crop(rdist, e)
 
 # Export derived products
-writeRaster(bathy, "D:/Data/agazella/gebco/derived_bathy.nc", format="CDF", overwrite=TRUE)
+writeRaster(bathy_ag, "data/gebco/derived_bathy_ag.nc", format="CDF", overwrite=TRUE)
 writeRaster(slope, "D:/Data/agazella/gebco/derived_slope.nc", format="CDF", overwrite=TRUE)
 writeRaster(sdist, "D:/Data/agazella/gebco/derived_sdist.nc", format="CDF", overwrite=TRUE)
 
