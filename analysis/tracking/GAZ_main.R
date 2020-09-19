@@ -32,10 +32,10 @@ filt_distlim <- c(2500, 5000) # value of the limite distance using in sdafilter,
 reg_time_step <- 2  # time step to interpolate positions, in hours
 
 # Simulations
-sim_mask_res <- 0.01  # resolution of ocean mask, in degrees
+#sim_mask_res <- 0.01  # resolution of ocean mask, in degrees
 sim_n <- 20  # number of simulations
-sim_fix_last <- FALSE  # fix last track location
-sim_exclude <- c(50722, 50732, 50735, 50737, 95590, 151934) # these turtles left the study area
+sim_fix_last <- TRUE  # fix last track location
+sim_exclude <- NULL # remove individuals from simulations
 
 # Extract environment
 env_buffer <- 15000  # radius of buffer to average environmental data around each location, in meters.

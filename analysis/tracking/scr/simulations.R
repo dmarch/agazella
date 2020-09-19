@@ -30,17 +30,9 @@ if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
 # 2. Create oceanmask
 #---------------------------------------------------------------
 
-# create base raster
-r <- raster(extent(ocean) + 0.5, res = sim_mask_res, crs = crs(ocean))
-
-# rasterize ocean mask
-rocean <- rasterize(as(ocean,"SpatialPolygons"), r)
-
-
-# Define resistance values (0 = ocean, 1 = land)
-rocean[rocean==1] <- 0
-rocean[is.na(rocean)] <- 1
-oceanmask <- rocean
+# Import oceanmask
+oceanmask <- raster("data/gebco/oceanmask.nc")
+oceanmask <- aggregate(oceanmask, fact = 5, fun = median)
 
 #---------------------------------------------------------------
 # 3. Select data
