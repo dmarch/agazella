@@ -26,6 +26,10 @@ library(argosfilter)
 library(foieGras)
 library(openxlsx)
 library(rworldxtra)
+library(availability) # https://github.com/AustralianAntarcticDataCentre/availability
+library(adehabitatHR)
+library(rgeos)
+library(sf)
 
 
 # Set project projections

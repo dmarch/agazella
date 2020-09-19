@@ -10,9 +10,6 @@
 
 # TODO: Add time-varying land mask (e.g. sea ice)
 
-library(availability)
-
-
 #---------------------------------------------------------------
 # Prepare cluster
 #---------------------------------------------------------------

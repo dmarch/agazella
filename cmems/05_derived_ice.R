@@ -1,12 +1,11 @@
 #-------------------------------------------
-# derived_gradients.R
+# derived_ice.R
 #-------------------------------------------
 # Date: 2017/11/23
 # Author: David March
-# Project: Tortugas oceanografas
 #
 # Description:
-# Generate repo for gradients of SST
+# Generate repo for ice extent
 
 
 # Load libraries
