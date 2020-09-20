@@ -18,21 +18,23 @@ tag_type <- "PTT"
 sel_min_loc <- 10  # minimum number of locations
 sel_min_dur <- 12 # minimum durantion of track, in hours
 sel_exclude <- NULL # custom selection of tags based on exploration of data
-sel_min_dist <- 15
+sel_min_dist <- 15 # minimum distance of tracks, in km
 
 # Track filtering
 filt_step_time <- 2/60  # time difference to consider duplicated positions, in hours
 filt_step_dist <- 1/1000  # spatial distance to consider duplicated poisitions, in km
 filt_land <- FALSE  # remove locations on land
-filt_vmax <- 10  # value of the maximum of velocity using in sdafilter in m/s
+filt_vmax <- 3  # value of the maximum of velocity using in sdafilter, in m/s
 filt_ang <- c(15, 25) # value of the angle using in sdafilter, no spikes are removed if ang=-1
 filt_distlim <- c(2500, 5000) # value of the limite distance using in sdafilter, no spikes are removed if ang=-1
 
 # Track regularization
 reg_time_step <- 2  # time step to interpolate positions, in hours
 
+# create ocean mask
+mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
+
 # Simulations
-#sim_mask_res <- 0.01  # resolution of ocean mask, in degrees
 sim_n <- 20  # number of simulations
 sim_fix_last <- TRUE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations

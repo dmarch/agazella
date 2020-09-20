@@ -30,6 +30,8 @@ library(availability) # https://github.com/AustralianAntarcticDataCentre/availab
 library(adehabitatHR)
 library(rgeos)
 library(sf)
+library(move)
+library(moveVis)
 
 
 # Set project projections

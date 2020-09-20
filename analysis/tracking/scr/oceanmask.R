@@ -42,7 +42,7 @@ proj4string(ssm) <- "+proj=longlat +ellps=WGS84"
 cp <- mcp(ssm, percent = 100) # MCP use all the positions
 
 # Extend the MCP with a buffer of 1 degree
-cp.buf <- gBuffer(cp, width = 1)
+cp.buf <- gBuffer(cp, width = mcp_expand)
 
 # Export MCP as shapefile
 cp.df <- data.frame(ID=1:length(cp.buf)) 
