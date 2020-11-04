@@ -22,7 +22,7 @@ source("scr/fun/fun_data_processing.R")
 #-----------------------------------------------
 
 # set repository for CMEMS products
-cmems_repo <- "D:/Data/agazella/cmems"
+cmems_repo <- "data/cmems"
 
 # import product catalog
 catalog <- read.csv("cmems/agazella_catalog.csv")  # list with updated products for 2019
@@ -31,8 +31,8 @@ catalog$date_max <- dmy(catalog$date_max)
 
 # Set roots for each repository
 catalog$root <- NA
-catalog$root[catalog$provider == "CMEMS"] <- "D:/Data/agazella/cmems"
-catalog$root[catalog$provider == "MOVEMED"] <- "D:/Data/agazella/cmems"
+catalog$root[catalog$provider == "CMEMS"] <- "data/cmems"
+catalog$root[catalog$provider == "MOVEMED"] <- "data/cmems"
 
 #-----------------------------------------------
 # Set initial parameters: dates for analysis
@@ -42,7 +42,7 @@ catalog$root[catalog$provider == "MOVEMED"] <- "D:/Data/agazella/cmems"
 dayseq <- seq(as.Date("2019-02-01"), as.Date("2019-09-30"), by = "day")
 
 # import map of distance to shore
-sdist <- raster("D:/Data/agazella/gebco/derived_sdist.nc")
+sdist <- raster("data/gebco/derived_sdist.nc")
 
 
 #-----------------------------------------------
@@ -50,8 +50,12 @@ sdist <- raster("D:/Data/agazella/gebco/derived_sdist.nc")
 #-----------------------------------------------
 
 # import ice concentration
-date <- dayseq[90]
+date <- dayseq[200]
 sic <- extract_raster(varname = "SIC", date = date, catalog = catalog)
+
+x <- rasterToContour(sic, level=0.15)
+plot(sic)
+plot(x, add=TRUE)
 
 # transform to extent based on % threshold
 sic[sic < 0.15] <- NA
@@ -62,10 +66,25 @@ sic_coarse <- resample(sic, sdist, method="ngb")
 
 
 # calculate distance to ice extent
-idist <- distance(sic_coarse )  # calculate distance
+idist <- distance(sic_coarse)  # calculate distance
 
 m <- mask(idist, sdist)
 m <- mask(m, sic_coarse, inverse = TRUE)
+
+
+x <- rasterToContour(idist, level=0)
+plot(idist)
+plot(x, add=TRUE)
+
+
+# to calculate interior distance use mask
+
+
+beginCluster()
+d <- clusterR(sic_coarse, distance)
+
+endCluster()
+
 
 #-----------------------------------------------
 # Process data

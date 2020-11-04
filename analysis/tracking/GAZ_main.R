@@ -35,14 +35,14 @@ reg_time_step <- 2  # time step to interpolate positions, in hours
 mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
 
 # Simulations
-sim_n <- 20  # number of simulations
+sim_n <- 100  # number of simulations
 sim_fix_last <- TRUE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations
 
 # Extract environment
 env_buffer <- 15000  # radius of buffer to average environmental data around each location, in meters.
-all_vars <- c("BAT", "SLP", "SDIST", "SMTD", "CANDIST", "SST", "SSTg", "SAL", "SALg", "SLA", "EKE", "CHL", "WIND", "WAV", "MLD")
-env_max_date <- as.Date("2019-01-01")
+all_vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD")
+env_max_date <- as.Date("2019-09-16")
 
 
 #---------------------------------------------------------------
@@ -97,3 +97,32 @@ source("analysis/tracking/scr/oceanmask.R")
 # Step 5. Generate pseudo-absences using simulations for habitat model
 # We select individuals that remain within the study area.
 source("analysis/tracking/scr/simulations.R")
+
+
+# Step 6. Extract environmental data
+# Note: First requires creating a daily stack
+
+# Observed
+input_folder <- "L2_locations"
+output_folder <- "L3_locations"
+plotTS <- TRUE
+source("analysis/tracking/scr/extract_stack.R")
+
+# Simulated
+cores <- 10  # reduce number of cores
+input_folder <- "L2_simulations"
+output_folder <- "L3_simulations"
+plotTS <- FALSE
+source("analysis/tracking/scr/extract_stack.R")
+
+# Step 7. Assess the number of simulations accounting for their environmental space
+source("analysis/tracking/scr/assess_enviro_space.R")
+
+# Step 8. Prepare data for habitat models
+# combines presence/absence
+# select fields (consider those to identify different stages/colonies if needed)
+# select number of simulations
+sim_n <- 30  # number of simulations to subset from the total
+source("analysis/tracking/scr/combine_observations.R")
+
+

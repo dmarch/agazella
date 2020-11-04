@@ -14,7 +14,7 @@ extract_raster <- function(varname, date, catalog){
   library(lubridate)
   
   # locate product by variable name and date
-  c <- dplyr::filter(catalog, var == varname, as.Date(date) >= date_min & as.Date(date) <= date_max)
+  c <- dplyr::filter(catalog, movemed_var == varname, as.Date(date) >= date_min & as.Date(date) <= date_max)
   
   # get date information
   YYYY <- year(date)
