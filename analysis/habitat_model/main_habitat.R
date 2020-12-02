@@ -12,7 +12,7 @@ library(stringr)
 source("scr/fun_habitat_plot.R")
 source("conf/config.R")
 
-vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD")
+vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE")
 
 
 cores <- 10
@@ -27,14 +27,14 @@ source("analysis/habitat_model/scr/eda.R")
 
 
 # define model
-mod_code <- "brt"
+mod_code <- "me"
   
 # Fit model
 # Try using the computer server for BRT
 # export results by model (eg me, brt)
 source("analysis/habitat_model/scr/fit_brt.R")
 
-
+source("analysis/habitat_model/scr/fit_me.R")
 
 
 #### Predict
@@ -47,7 +47,7 @@ date_end <- as.Date("2019-09-15")
   sp_name <- "A. gazella"
   
   # define model
-  mod_code <- "brt"
+  mod_code <- "me"
   
   # define subfolder
   predict_folder <- "species"
@@ -55,7 +55,7 @@ date_end <- as.Date("2019-09-15")
   # Perdict model
   # export results by model (eg me, brt)
   source("analysis/habitat_model/scr/predict_sdm.R")
-}
+
 # Ensemble models
 
 

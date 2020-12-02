@@ -76,6 +76,7 @@ p10 <- density.plot(title="", xlab="log(CHL)", legend="", alpha=0.35, data=data,
 p11 <- density.plot(title="", xlab="SIC", legend="", alpha=0.35, data=data, var=data$SIC, group=data$type)
 p12 <- density.plot(title="", xlab="SIT", legend="", alpha=0.35, data=data, var=data$SIT, group=data$type)
 p13 <- density.plot(title="", xlab="MLD", legend="", alpha=0.35, data=data, var=data$MLD, group=data$type)
+p14 <- density.plot(title="", xlab="EDGE", legend="", alpha=0.35, data=data, var=data$EDGE, group=data$type)
 
 
 # create layaout
@@ -85,10 +86,10 @@ lay <- rbind(c(1,2),
              c(7,8),
              c(9,10),
              c(11,12),
-             c(13,NA))
+             c(13,14))
 p <- grid.arrange(p1, p2, p3, p4,
                   p5, p6, p7, p8,
-                  p9, p10, p11, p12, p13,
+                  p9, p10, p11, p12, p13,p14,
                   layout_matrix = lay)
 
 # plot

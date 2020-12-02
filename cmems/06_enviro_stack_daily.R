@@ -29,7 +29,7 @@ date_start <- as.Date("2019-02-20")
 date_end <- as.Date("2019-09-15")
 
 # dynamic variables to extract. same names as catalog
-env_dyn_vars <- c("SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD") 
+env_dyn_vars <- c("SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE") 
 
 # path to environmental static data
 static_data <- "data/gebco"
@@ -120,6 +120,13 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
     jvar <- prepareGridCatalogue(var = env_dyn_vars[j], catalog = catalog, name = env_dyn_vars[j], date = date, m = m, method = "bilinear")
     stack_dynamic <- stack(stack_dynamic, jvar)
   }
+  
+  # modify ice variables to add zero values
+  stack_dynamic$SIC[is.na(stack_dynamic$SIC)] <- 0
+  stack_dynamic$SIC <- mask(stack_dynamic$SIC, bat)
+  
+  stack_dynamic$SIT[is.na(stack_dynamic$SIT)] <- 0
+  stack_dynamic$SIT <- mask(stack_dynamic$SIT, bat)
   
   # combine with static stack
   s <- stack(stack_static, stack_dynamic)

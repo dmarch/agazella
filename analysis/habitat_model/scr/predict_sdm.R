@@ -16,14 +16,16 @@ stack_path <- "data/out/environment/stack_daily"
 
 
 ## Import landmask
-data(countriesHigh, package = "rworldxtra", envir = environment())
-e <- extent(-90, -20, -80, -40)
-land <- crop(countriesHigh, e)
-
+library("rnaturalearthdata")
+library("rnaturalearth")
+world <- ne_countries(scale = "medium", returnclass = "sp")
+land <- crop(world, extent(-90, -20, -80, -40))
 
 
 # Import model
 mod <- readRDS(paste0(input_data, "/", sp_code, "_", mod_code, ".rds"))
+
+
 
 # Prepare cluster
 cl <- makeCluster(cores)

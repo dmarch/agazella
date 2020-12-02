@@ -3,6 +3,43 @@
 #------------------------------------------------------------------------------------------
 
 
+
+#---------------------------------------------------------------------------------
+# export_raster         Export raster from dynamic variables
+#---------------------------------------------------------------------------------
+export_raster <- function(r, varname, date, catalog){
+  # use the catalog as main source to locate where the data is found
+  
+  library(stringr)
+  library(lubridate)
+  
+  # locate product by variable name and date
+  c <- dplyr::filter(catalog, movemed_var == varname, as.Date(date) >= date_min & as.Date(date) <= date_max)
+  
+  # get date information
+  YYYY <- year(date)
+  MM <- sprintf("%02d", month(date))
+  DD <- sprintf("%02d", day(date))
+  
+  # locate folder
+  repo = c$root
+  service = c$service
+  product = c$product
+  product_folder <- paste(repo, service, product, YYYY, MM, sep="/")  # Set folder
+  if (!dir.exists(product_folder)) dir.create(product_folder, recursive = TRUE)  # create output directory if does not exist
+  
+  ## Export output raster
+  output_var <- as.character(c$variable)
+  output_name <- as.character(c$standard_name)
+  file_name <- paste0(YYYY, MM, DD, "_", product, "_", output_var, ".nc")  # Set file name
+  file_path <- paste(product_folder, file_name, sep="/")  # Set file path 
+  writeRaster(r, filename = file_path, format="CDF", overwrite=TRUE,
+              varname = output_var, longname = output_name, xname="lon", yname="lat") 
+}
+#---------------------------------------------------------------------------------
+
+
+
 #---------------------------------------------------------------------------------
 # extract_raster         Extract data from dynamic variables
 #---------------------------------------------------------------------------------

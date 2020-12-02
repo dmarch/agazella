@@ -17,6 +17,44 @@ library(lubridate)
 source("../caldio/scr/extract_tools.R")
 source("scr/fun/fun_data_processing.R")
 
+#------------------------------------------------------------------------------
+# distToIceEdge
+#------------------------------------------------------------------------------
+distToIceEdge <- function(sic, oceanmask, thrs=0.15){
+  # Calculate distance to ice edge
+  # x: ice concentration raster
+  # thrs: concentration threshold used to define the edge
+  # oceanmask: raster with NA values on land cells
+  #
+  # returns raster with distance to edge.
+  # positive values from ocean, negative from ice
+  
+  # transform to extent based on % threshold
+  sic[sic >= thrs] <- 1  # sea icea (1)
+  sic[sic < thrs] <- 2  # ocean (2)
+  sic[is.na(sic)] <- 2
+  
+  # resample to coarser resolution
+  sic_coarse <- resample(sic, oceanmask, method="ngb")
+  
+  # calculate distance to ice extent (from the ocean, positive)
+  idist <- gridDistance(sic_coarse, origin = 1) 
+  idist <- mask(idist, oceanmask)
+  
+  # calculate distance to ice extent (from the ice, negative)
+  idist2 <- gridDistance(sic_coarse, origin = 2) 
+  idist2 <- mask(idist2, oceanmask)
+  idist2 <- idist2 * (-1)
+  
+  # combine
+  dist <- sum(idist, idist2)/1000 # transform to km
+  return(dist)
+}
+#------------------------------------------------------------------------------
+
+
+
+
 #-----------------------------------------------
 # Import data catalog
 #-----------------------------------------------
@@ -46,85 +84,28 @@ sdist <- raster("data/gebco/derived_sdist.nc")
 
 
 #-----------------------------------------------
-# Retrieve raster
+# Process distance to ice edge
 #-----------------------------------------------
-
-# import ice concentration
-date <- dayseq[200]
-sic <- extract_raster(varname = "SIC", date = date, catalog = catalog)
-
-x <- rasterToContour(sic, level=0.15)
-plot(sic)
-plot(x, add=TRUE)
-
-# transform to extent based on % threshold
-sic[sic < 0.15] <- NA
-sic[sic >= 0.15] <- 1
-
-# resample to coarser resolution
-sic_coarse <- resample(sic, sdist, method="ngb")
-
-
-# calculate distance to ice extent
-idist <- distance(sic_coarse)  # calculate distance
-
-m <- mask(idist, sdist)
-m <- mask(m, sic_coarse, inverse = TRUE)
-
-
-x <- rasterToContour(idist, level=0)
-plot(idist)
-plot(x, add=TRUE)
-
-
-# to calculate interior distance use mask
-
-
-beginCluster()
-d <- clusterR(sic_coarse, distance)
-
-endCluster()
-
-
-#-----------------------------------------------
-# Process data
-#-----------------------------------------------
-
 
 ## Prepare clusters
-cores <- 18  # detectCores()
+cores <- 10  # detectCores()
 cl <- makeCluster(cores)
 registerDoParallel(cl)
 
+
 y <- foreach(i=1:length(dayseq), .packages=c("raster", "lubridate"), .inorder=FALSE) %dopar% {
-  
-  ## Get date
+
+  # import ice concentration
   date <- dayseq[i]
-  YYYY <- year(date)
-  MM <- sprintf("%02d", month(date))
-  DD <- sprintf("%02d", day(date))
+  sic <- extract_raster(varname = "SIC", date = date, catalog = catalog)
   
-  ## Import file
-  product_folder <- paste(cmems_repo, input_service, input_product, YYYY, MM, sep="/")  # Set folder
-  file_name <- paste0(YYYY, MM, DD, "_", input_product, "_", input_var, ".nc")  # Set file name
-  file_path <- paste(product_folder, file_name, sep="/")  # Set file path 
-  r <- raster(file_path, var=input_var)  # import file
+  # calculate distance to ice edge
+  edgedist <- distToIceEdge(sic, oceanmask = sdist, thrs = 0.15)
   
-  ## Generate derived product
-  p <- terrain(r, opt="slope", unit="degrees", neighbors = 4)
-  setZ(p, getZ(r))
-  names(p) <- output_var
-
-  
-  ## Export output raster
-  product_folder <- paste(cmems_repo, output_service, output_product, YYYY, MM, sep="/")  # Set folder
-  if (!dir.exists(product_folder)) dir.create(product_folder, recursive = TRUE)  # create output directory if does not exist
-  file_name <- paste0(YYYY, MM, DD, "_", output_product, "_", output_var, ".nc")  # Set file name
-  file_path <- paste(product_folder, file_name, sep="/")  # Set file path 
-  writeRaster(p, filename = file_path, format="CDF", overwrite=TRUE,
-              varname = output_var, longname = output_name, xname="lon", yname="lat") 
-
+  # export raster
+  export_raster(r=edgedist, varname="EDGE", date=date, catalog=catalog)
 }
 
 # stop cluster
 stopCluster(cl)
+

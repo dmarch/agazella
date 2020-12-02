@@ -58,7 +58,9 @@ covar <- dplyr::select(data, vars)
 mod <- maxent(covar, response)
 
 # Save model
-save(mod, file = paste0(output_data, "/", sp_code, "_", mod_code, ".Rdata"))  # save model
+#save(mod, file = paste0(output_data, "/", sp_code, "_", mod_code, ".Rdata"))  # save model
+saveRDS(mod, file = paste0(output_data, "/", sp_code, "_", mod_code, ".rds"))  # save model
+
 
 # Plot variable contribution
 pngfile <- paste0(output_data, "/", sp_code, "_", mod_code, "_var_contrib.png")

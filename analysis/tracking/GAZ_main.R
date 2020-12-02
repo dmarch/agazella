@@ -41,7 +41,7 @@ sim_exclude <- NULL # remove individuals from simulations
 
 # Extract environment
 env_buffer <- 15000  # radius of buffer to average environmental data around each location, in meters.
-all_vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD")
+all_vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE")
 env_max_date <- as.Date("2019-09-16")
 
 
