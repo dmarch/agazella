@@ -4,21 +4,19 @@
 
 
 
-library(corrplot)
-
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-input_data <- "data/out/habitat_model/observations/"
-output_data <- paste0("results/habitat_model/", sp_code)
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs/")
+outdir <- paste0(output_data, "/habitat-model/", sp_code)
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 #-----------------------------------------------------------------
 # Import observations
 #-----------------------------------------------------------------
 
-obs_file <- paste0(input_data, sp_code, "_observations.csv")
+obs_file <- paste0(indir, sp_code, "_observations.csv")
 data <- read.csv(obs_file)
 
 
@@ -30,7 +28,7 @@ data <- read.csv(obs_file)
 df <- data %>% dplyr::filter(occ == 1) %>% dplyr::select(vars)
 
 ## Plot missing data per variable
-pngfile <- paste0(output_data, "/", sp_code, "_eda_missing.png")
+pngfile <- paste0(outdir, "/", sp_code, "_eda_missing.png")
 png(pngfile, width=1500, height=1000, res=200)
 p <- plot_Missing(df)
 print(p)
@@ -45,7 +43,7 @@ dev.off()
 correlations <- cor(na.omit(dplyr::select(df, vars)), method="pearson")
 
 # plot correlations
-pngfile <- paste0(output_data, "/", sp_code, "_eda_corplot.png")
+pngfile <- paste0(outdir, "/", sp_code, "_eda_corplot.png")
 png(pngfile, width=2500, height=2000, res=300)
 corrplot(correlations, method="circle", tl.col = "black", order = "original", diag=FALSE, type="upper")
 dev.off()
@@ -93,7 +91,7 @@ p <- grid.arrange(p1, p2, p3, p4,
                   layout_matrix = lay)
 
 # plot
-pngfile <- paste0(output_data, "/", sp_code, "_eda_density.png")
+pngfile <- paste0(outdir, "/", sp_code, "_eda_density.png")
 png(pngfile, width=3000, height=3500, res=300)
 grid.draw(p)
 dev.off()

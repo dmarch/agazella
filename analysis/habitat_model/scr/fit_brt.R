@@ -4,25 +4,12 @@
 
 
 
-
-
-## Load dependencies
-library(dplyr)
-library(lubridate)
-library(rJava) 
-library(dismo)
-library(data.table)
-library(gbm)
-library(fmsb)
-
-
-
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-input_data <- "data/out/habitat_model/observations/"
-output_data <- paste0("results/habitat_model/", sp_code)
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs/")
+outdir <- paste(output_data, "habitat-model", sp_code, mod_code, sep="/")
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 #-----------------------------------------------------------------
@@ -30,7 +17,7 @@ if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
 #-----------------------------------------------------------------
 
 # Import observations
-obs_file <- paste0(input_data, sp_code, "_observations.csv")
+obs_file <- paste0(indir, sp_code, "_observations.csv")
 data <- read.csv(obs_file)
 
 # Transform skewed variables
@@ -57,19 +44,22 @@ mod <- gbm.step(data = data,             # data.frame with data
                 bag.fraction = 0.6)    # bag fraction
 
 
+# maximum tree limit reached - results may not be optimal 
+# - refit with faster learning rate or increase maximum number of trees 
+
 # Save model
-saveRDS(mod, file = paste0(output_data, "/", sp_code, "_", mod_code, ".rds"))  # save model
+saveRDS(mod, file = paste0(outdir, "/", sp_code, "_", mod_code, ".rds"))  # save model
 
 # Plot variable contribution using radar plot
 var_imp <- summary(mod)$rel.inf
 names(var_imp) <- summary(mod)$var
-pngfile <- paste0(output_data, "/", sp_code, "_", mod_code, "_var_radar.png")
+pngfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_var_radar.png")
 png(pngfile, width=1000, height=1000, res=150)
 radarPlot(var_imp, var_order=vars)
 dev.off()
 
 # Plot response curves
-pngfile <- paste0(output_data, "/", sp_code, "_", mod_code, "_response.png")
+pngfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_response.png")
 png(pngfile, width=1500, height=1000, res=200)
 gbm.plot(mod, n.plots=12)
 dev.off()

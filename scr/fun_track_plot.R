@@ -236,13 +236,14 @@ mapSimTracks  <- function (simData, obsData, title = NULL){
     ylab("Latitude") +
     geom_path(data = simData,
               aes_string(x = "lon", y = "lat", group = "simid"),
-              size=0.5, alpha=0.5, color="dodgerblue3") +
+              size=0.5, alpha=0.5, color="grey70") +
     geom_path(data = obsData,
               aes_string(x = "lon", y = "lat", group = "trip"),
-              size=0.5, alpha=1, color="red") +
+              size=0.5, alpha=1, color="red1") +
     geom_point(data = data.table::first(obsData),
                aes_string(x = "lon", y = "lat"),
-               size=3, alpha=1, color="green") +
+               shape = 21, colour = "red4", fill = "white", size = 2, stroke = 2) +
+               #size=3, alpha=1, color="black") + #(shape = 21, colour = "red", fill = "white", size = 4, stroke = 2)
     theme_bw() +
     theme(panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +

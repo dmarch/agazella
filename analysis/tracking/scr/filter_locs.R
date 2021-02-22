@@ -20,9 +20,9 @@ registerDoParallel(cl)
 # 1. Set data repository
 #---------------------------------------------------------------
 
-input_data <- paste0("data/out/tracking/", sp_code, "/L0_locations")
-output_data <- paste0("data/out/tracking/", sp_code, "/L1_locations")
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+indir <- paste0(output_data, "/tracking/", sp_code, "/L0_locations")
+outdir <- paste0(output_data, "/tracking/", sp_code, "/L1_locations")
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 #---------------------------------------------------------------
@@ -30,7 +30,7 @@ if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
 #---------------------------------------------------------------
 
 # import all location files
-loc_files <- list.files(input_data, full.names = TRUE, pattern = "L0_locations.csv")
+loc_files <- list.files(indir, full.names = TRUE, pattern = "L0_locations.csv")
 df <- readTrack(loc_files)
 
 # summarize data per trip
@@ -105,17 +105,20 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "gridExtra", "grid", "data.table
   
   # Trim tracks into segments according to temporal gaps
   # This part only applies on Argos data
-  if(tag_type == "PTT"){
-    #dataL1$trip <- timedif.segment(dataL1$date, thrs = trip_time_gap)
-    #dataL1$trip <- paste(i, str_pad(dataL1$trip, 3, pad = "0"), sep="_") 
+  if(trip_type == "haul"){
     dataL1$trip <- segmentOnPort(dataL1$habitat)  # generate segments including periods on land
     dataL1 <- filter(dataL1, habitat == 2)  # remove periods on land
     dataL1$trip <- segmentOnPort(dataL1$trip)  # regenerate trip id
     dataL1$trip <- paste(i, str_pad(dataL1$trip, 3, pad = "0"), sep="_")
   }
+  
+  if(trip_type == "time"){
+    dataL1$trip <- timedif.segment(dataL1$date, thrs = trip_time_gap)
+    dataL1$trip <- paste(i, str_pad(dataL1$trip, 3, pad = "0"), sep="_") 
+  }
 
   # store track data into individual folder at output path
-  out_file <- paste0(output_data, "/", i, "_L1_locations.csv")
+  out_file <- paste0(outdir, "/", i, "_L1_locations.csv")
   write.csv(dataL1, out_file, row.names = FALSE)
   
   # plot track
@@ -133,7 +136,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "gridExtra", "grid", "data.table
   p <- grid.arrange(p1, p2, layout_matrix = lay)
   
   # export multi-panel plot
-  out_file <- paste0(output_data, "/", i, "_L1_locations.png")
+  out_file <- paste0(outdir, "/", i, "_L1_locations.png")
   ggsave(out_file, p, width=30, height=15, units = "cm")
 }
 
@@ -144,14 +147,14 @@ stopCluster(cl) # Stop cluster
 #---------------------------------------------------------------
 
 # import all location files
-loc_files <- list.files(output_data, full.names = TRUE, pattern = "L1_locations.csv")
+loc_files <- list.files(outdir, full.names = TRUE, pattern = "L1_locations.csv")
 df <- readTrack(loc_files)
 
 # summarize data per animal id
 idstats <- summarizeId(df)
 
 # export table
-out_file <- paste0(output_data, "/", sp_code, "_summary_id.csv")
+out_file <- paste0(outdir, "/", sp_code, "_summary_id.csv")
 write.csv(idstats, out_file, row.names = FALSE)
 
 print("Filtering ready")

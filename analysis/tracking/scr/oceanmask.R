@@ -7,7 +7,6 @@
 # We consider three main constrains of the movement of marine animals:
 # 1.- A land mask, to avoid moving into land.
 # 2.- A study area, in this case defined by the minimum convex polygon of all tracks.
-# 3.- Ice extent, which varies on a daily basis
 #
 # Returns:
 # 1) A minimum convex polygon (shapefile format)
@@ -22,11 +21,13 @@
 #--------------------------------
 
 # Import bathymetry
-bathy <- raster("data/gebco/derived_bathy.nc")
+# bathy <- raster("data/gebco/derived_bathy.nc")
+bathy_nc <- paste0(output_data, "/terrain/derived_bathy.nc")
+bathy <- raster(bathy_nc)
 
 ## Import L2 product of simulations (i.e. simulations with environmental data)
-input_data <- paste0("data/out/tracking/", sp_code, "/L2_locations")
-loc_files <- list.files(input_data, full.names = TRUE, pattern = "L2_locations.csv")
+indir <- paste0(output_data, "/tracking/", sp_code, "/L2_locations")
+loc_files <- list.files(indir, full.names = TRUE, pattern = "L2_locations.csv")
 ssm <- readTrack(loc_files)
 
 
@@ -45,10 +46,10 @@ cp <- mcp(ssm, percent = 100) # MCP use all the positions
 cp.buf <- gBuffer(cp, width = mcp_expand)
 
 # Export MCP as shapefile
-cp.df <- data.frame(ID=1:length(cp.buf)) 
-row.names(cp.df) <- "buffer"
-p <- SpatialPolygonsDataFrame(cp.buf, cp.df) 
-writeOGR(p, paste(input_data, "mcp.gpkg", sep="/"), "mcp", driver="GPKG", overwrite_layer=TRUE)
+# cp.df <- data.frame(ID=1:length(cp.buf)) 
+# row.names(cp.df) <- "buffer"
+# p <- SpatialPolygonsDataFrame(cp.buf, cp.df) 
+# writeOGR(p, paste(input_data, "mcp.gpkg", sep="/"), "mcp", driver="GPKG", overwrite_layer=TRUE)
 
 
 #--------------------------------
@@ -61,7 +62,11 @@ bathy[!is.na(bathy)] <- 0
 bathy[is.na(bathy)] <- 1
 
 # Mask with MCP extent
-oceanmask <- mask(bathy, cp.buf)
+#oceanmask <- mask(bathy, cp.buf)
+oceanmask <- bathy
+
+# downsize
+oceanmask <- aggregate(oceanmask, fact = 5, fun = median)
 
 # Export resistance
-writeRaster(oceanmask, "data/gebco/oceanmask.nc", format="CDF", overwrite=TRUE)
+writeRaster(oceanmask, paste0(output_data, "/terrain/oceanmask.nc"), format="CDF", overwrite=TRUE)

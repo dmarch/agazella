@@ -21,9 +21,9 @@ registerDoParallel(cl)
 # 1. Set data repository
 #---------------------------------------------------------------
 
-input_data <- paste0("data/out/tracking/", sp_code, "/L2_locations")
-output_data <- paste0("data/out/tracking/", sp_code, "/L2_simulations")
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+indir <- paste0(output_data, "/tracking/", sp_code, "/L2_locations")
+outdir <- paste0(output_data, "/tracking/", sp_code, "/L2_simulations")
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 #---------------------------------------------------------------
@@ -31,15 +31,15 @@ if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
 #---------------------------------------------------------------
 
 # Import oceanmask
-oceanmask <- raster("data/gebco/oceanmask.nc")
-oceanmask <- aggregate(oceanmask, fact = 5, fun = median)
+oceanmask <- raster( paste0(output_data, "/terrain/oceanmask.nc"))
+oceanmask <- oceanmask+0  # this makes the raster to be in memory and make simulations faster
 
 #---------------------------------------------------------------
 # 3. Select data
 #---------------------------------------------------------------
 
 # import summary data
-db <- read.csv(paste0(input_data, "/", sp_code, "_summary_ssm.csv"))
+db <- read.csv(paste0(indir, "/", sp_code, "_summary_ssm.csv"))
 
 # select by number of locations and minimum duration
 tags <- unique(db$id)
@@ -56,13 +56,19 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "availability", "data.table", "r
   print(paste("Processing tag", i))
   
   # import data
-  loc_file <- paste0(input_data, "/", i, "_L2_locations.csv")
+  loc_file <- paste0(indir, "/", i, "_L2_locations.csv")
   data <- readTrack(loc_file)
   
   # select trips that converged in the SSM
   trips <- unique(data$trip)
   sel <- which(trips %in% db$trip[db$converged==TRUE])
   trips <- trips[sel]
+  
+  # if simulations are conducted for the whole track, overwrite trip data
+  if(sim_by_trip == FALSE){
+    data$trip <- data$id
+    trips <- data$id[1]
+  }
 
   trip_list <- list()
   
@@ -113,12 +119,12 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "availability", "data.table", "r
   simdf <- rbindlist(trip_list)
   
   # export track data into individual folder at output path
-  out_file <- paste0(output_data, "/", i, "_sim_L2_locations.csv")
+  out_file <- paste0(outdir, "/", i, "_sim_L2_locations.csv")
   write.csv(simdf, out_file, row.names = FALSE)
   
   ## Plot simulations
   p <- mapSimTracks(simData = simdf, obsData = data, title = paste("ID", i))
-  out_file <- paste0(output_data, "/", i, "_sim_L2_locations.png")
+  out_file <- paste0(outdir, "/", i, "_sim_L2_locations.png")
   ggsave(out_file, p, width=30, height=15, units = "cm")
 }
   
@@ -128,7 +134,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "availability", "data.table", "r
 #---------------------------------------------------------------
 
 # identify all location files
-loc_files <- list.files(output_data, full.names = TRUE, pattern = "sim_L2_locations.csv")
+loc_files <- list.files(outdir, full.names = TRUE, pattern = "sim_L2_locations.csv")
 
 # sumarize number of simulations per trip
 # some trips may have problems for simulation. So, next steps will filter trip
@@ -144,7 +150,7 @@ comb <- merge(db, sim_stats, by="trip", all.x=TRUE)
 
 
 # export table
-out_file <- paste0(output_data, "/", sp_code, "_summary_sim.csv")
+out_file <- paste0(outdir, "/", sp_code, "_summary_sim.csv")
 write.csv(comb, out_file, row.names = FALSE)
 
 

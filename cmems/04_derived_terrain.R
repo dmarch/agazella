@@ -11,11 +11,14 @@
 # - Distance to shore
 
 
-library(raster)
+source("setup.R")
 
+# set output dir
+outdir <- paste0(output_data, "/terrain/")
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 # import bathymetry
-bathync <- "E:/data/gebco/RN-4015_1510486680263/GEBCO_2014_2D.nc"
+bathync <- paste0(input_data, "/bathymetry/GEBCO_2014_2D.nc")#"E:/data/gebco/RN-4015_1510486680263/GEBCO_2014_2D.nc"
 bathy <- raster(bathync)
 
 # crop to larger region of the stud area to calculate distance to shore
@@ -49,8 +52,9 @@ sdist <- rdist
 # sdist <- crop(rdist, e)
 
 # Export derived products
-writeRaster(bathy_ag, "data/gebco/derived_bathy_ag.nc", format="CDF", overwrite=TRUE)
-writeRaster(slope, "D:/Data/agazella/gebco/derived_slope.nc", format="CDF", overwrite=TRUE)
-writeRaster(sdist, "D:/Data/agazella/gebco/derived_sdist.nc", format="CDF", overwrite=TRUE)
+writeRaster(bathy, paste0(outdir, "derived_bathy.nc"), format="CDF", overwrite=TRUE)
+writeRaster(bathy_ag, paste0(outdir, "derived_bathy_ag.nc"), format="CDF", overwrite=TRUE)
+writeRaster(slope, paste0(outdir, "derived_slope.nc"), format="CDF", overwrite=TRUE)
+writeRaster(sdist, paste0(outdir, "derived_sdist.nc"), format="CDF", overwrite=TRUE)
 
 

@@ -25,11 +25,13 @@ registerDoParallel(cl)
 #---------------------------------------------------------------
 
 # input file with batch data
-file <- "data/raw/tracking/TelemetriaPPT.xlsx"
+# file <- "data/raw/tracking/TelemetriaPPT.xlsx"
+file <- paste0(input_data, "/tracking/TelemetriaPPT.xlsx")
 
 # output directory
-output_data <- paste0("data/out/tracking/", sp_code, "/L0_locations")
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+#output_data <- paste0("data/out/tracking/", sp_code, "/L0_locations")
+outdir <- paste0(output_data, "/tracking/", sp_code, "/L0_locations")
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 #---------------------------------------------------------------
@@ -64,12 +66,12 @@ foreach(i=db$id, .packages=c("dplyr", "ggplot2", "stringr")) %dopar% {
   dataL0 <- dplyr::select(dataL0, id, trip, everything())
   
   # store into individual folder at output path
-  out_file <- paste0(output_data, "/", id, "_L0_locations.csv")
+  out_file <- paste0(outdir, "/", id, "_L0_locations.csv")
   write.csv(dataL0, out_file, row.names = FALSE)
   
   # plot track
   p <- map_argos(dataL0)
-  out_file <- paste0(output_data, "/", id, "_L0_locations.png")
+  out_file <- paste0(outdir, "/", id, "_L0_locations.png")
   ggsave(out_file, p, width=30, height=15, units = "cm")
 }
 
@@ -81,14 +83,14 @@ stopCluster(cl)  # Stop cluster
 #---------------------------------------------------------------
 
 # import all location files
-loc_files <- list.files(output_data, full.names = TRUE, pattern = "L0_locations.csv")
+loc_files <- list.files(outdir, full.names = TRUE, pattern = "L0_locations.csv")
 df <- readTrack(loc_files)
 
 # summarize data per animal id
 idstats <- summarizeId(df)
 
 # export table
-out_file <- paste0(output_data, "/", sp_code, "_summary_id.csv")
+out_file <- paste0(outdir, "/", sp_code, "_summary_id.csv")
 write.csv(idstats, out_file, row.names = FALSE)
 
 

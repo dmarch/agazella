@@ -54,7 +54,8 @@ download_cmems_daily <- function(date, cmems_repo, cfg, ROI, n_tries = 10, sleep
 
 
 # set repository for CMEMS products
-cmems_repo <- "D:/Data/agazella/cmems"
+cmems_repo <- paste0(input_data, "/cmems") #"D:/Data/agazella/cmems"
+
 
 # import product catalog
 catalog <- read.csv("cmems/agazella_catalog.csv")  # list with updated products for 2019

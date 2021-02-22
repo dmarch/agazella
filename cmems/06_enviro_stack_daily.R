@@ -3,7 +3,8 @@
 #-------------------------------------------------------------------------------------------
 # This script generates a daily multiband raster to then make model predictions.
 
-source("conf/config.R")
+#source("conf/config.R")
+source("setup.R")
 source("scr/fun_enviro.R")  # function to process environmental data
 
 
@@ -32,11 +33,11 @@ date_end <- as.Date("2019-09-15")
 env_dyn_vars <- c("SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE") 
 
 # path to environmental static data
-static_data <- "data/gebco"
+static_data <- paste0(output_data, "/terrain/")
 
 # path to output
-output_data <- "data/out/environment/stack_daily"
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+outdir <- paste0(output_data, "/stack_daily/")#"data/out/environment/stack_daily"
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 
@@ -65,7 +66,7 @@ m[] <- 1
 #---------------------------------------------------------------
 
 # import static maps
-bathy <- raster(paste0(static_data, "/derived_bathy.nc"))  # bathymetry
+bathy <- raster(paste0(static_data, "/derived_bathy_ag.nc"))  # bathymetry
 bathy <- bathy+0
 slope <- raster(paste0(static_data, "/derived_slope.nc"))  # slope
 slope <- slope+0
@@ -74,8 +75,8 @@ sdist <- sdist+0
 
 
 # import catalogue with oceanographic products
-provider_paths <- list(CMEMS = "data/cmems",
-                       MOVEMED = "data/cmems")
+provider_paths <- list(CMEMS = paste0(input_data, "/cmems"),#"data/cmems",
+                       MOVEMED = paste0(input_data, "/cmems"))#"data/cmems")
 catalog <- import_catalog("cmems/agazella_catalog.csv", provider_paths)
 
 
@@ -133,7 +134,7 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   s <- setZ(s, rep(date, nlayers(s)))
   
   # set/create folder
-  product_folder <- paste(output_data, YYYY, MM, sep="/")  # Set folder
+  product_folder <- paste(outdir, YYYY, MM, sep="/")  # Set folder
   if (!dir.exists(product_folder)) dir.create(product_folder, recursive = TRUE)  # create output directory if does not exist
   
   # store file in GRD format

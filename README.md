@@ -5,17 +5,13 @@ Satellite tracking of Antarctic fur seal (Arctocephalus gazella)
 # Workflow
 
 
-### Download CMEMS data
+1. Run setup.R to create data paths and check that all required packages are installed
+2. Place "tracking" (telemetry data) into "GitData/agazella/input".
+3. Download GEBCO bathymetry and add into "GitData/agazella/input" under folder "bathymetry"
+4. Run scripts in /cmems folder to download and post-processes environmental data. Check that path to adequate GEBCO map is defined in "04_derived_terrain.R". Main output are daily stacks of gridded environmental variables.
+5. Process satellite tracking data by running "analysis/tracking/GAZ_main.R"
+6. Habitat model "analysis/habitat_model/main_habitat.R"
 
-Find the scripts in `cmems/`.
-
-
-### Process animal trajectories
-
-
-* scr/01_process_location_data.R: This script processes location data. Includes standardization and filtering.
-
-* scr/02_animated_maps.R: Generated animated gifs to explore the animal tracks
 
 
 
