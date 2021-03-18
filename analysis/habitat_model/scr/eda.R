@@ -25,7 +25,9 @@ data <- read.csv(obs_file)
 #-----------------------------------------------------------------
 
 ## Select observed data
-df <- data %>% dplyr::filter(occ == 1) %>% dplyr::select(vars)
+df <- data %>% 
+  #☼dplyr::filter(occ == 1) %>%
+  dplyr::select(vars)
 
 ## Plot missing data per variable
 pngfile <- paste0(outdir, "/", sp_code, "_eda_missing.png")
@@ -45,8 +47,24 @@ correlations <- cor(na.omit(dplyr::select(df, vars)), method="pearson")
 # plot correlations
 pngfile <- paste0(outdir, "/", sp_code, "_eda_corplot.png")
 png(pngfile, width=2500, height=2000, res=300)
-corrplot(correlations, method="circle", tl.col = "black", order = "original", diag=FALSE, type="upper")
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(correlations, method="color",col=col(200), tl.col = "black", order = "original", diag=FALSE, type="upper", 
+         addCoef.col = "black") # Add coefficient of correlation
 dev.off()
+
+
+
+# calcualate correlations using Spearman and clustering analysis
+pngfile <- paste0(outdir, "/", sp_code, "_eda_cluster.png")
+png(pngfile, width=2500, height=2000, res=300)
+op <- par(mar=c(0.5,5,0.5,0.5))
+v <- as.formula(paste("~", vars, collapse="+"))
+plot(varclus(v, similarity=c("spearman"),data=df),cex=.8) # plot cluster
+abline(a=0.30,0,col="grey70",lty=1,lwd=5)
+par(op)
+dev.off()
+
+
 
 
 #-----------------------------------------------------------------

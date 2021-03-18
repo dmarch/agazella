@@ -16,10 +16,10 @@
 #---------------------------------------------------------------
 # Output folder is common for all tracking species
 
-ssm_data <- paste0("data/out/tracking/", sp_code, "/L3_locations")
-sim_data <- paste0("data/out/tracking/", sp_code, "/L3_simulations")
-output_data <- "data/out/habitat_model/observations"
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+ssm_data <- paste0(output_data, "/tracking/", sp_code, "/L3_locations")
+sim_data <- paste0(output_data, "/tracking/", sp_code, "/L3_simulations")
+outdir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs")
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 #---------------------------------------------------------------
@@ -73,5 +73,5 @@ obs <- dplyr::filter(obs, trip %in% simTrips)
 #---------------------------------------------------------------
 
 df <- rbind(obs, sim)
-out_file <- paste0(output_data, "/", sp_code, "_observations.csv")
+out_file <- paste0(outdir, "/", sp_code, "_observations.csv")
 write.csv(df, out_file, row.names = FALSE)

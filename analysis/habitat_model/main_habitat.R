@@ -20,6 +20,7 @@ sp_code <- "GAZ"  # species code
 
 # EDA
 source("analysis/habitat_model/scr/eda.R")
+vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "MLD", "EDGE")
 
 
 

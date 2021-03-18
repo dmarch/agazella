@@ -30,7 +30,7 @@ filt_ang <- c(15, 25) # value of the angle using in sdafilter, no spikes are rem
 filt_distlim <- c(2500, 5000) # value of the limite distance using in sdafilter, no spikes are removed if ang=-1
 
 # Track regularization
-reg_time_step <- 2  # time step to interpolate positions, in hours
+reg_time_step <- 6  # time step to interpolate positions, in hours
 
 # create ocean mask
 mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
@@ -40,9 +40,12 @@ sim_n <- 100  # number of simulations
 sim_fix_last <- FALSE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations
 sim_by_trip <- TRUE  # generate simulation by trip rather than full track
+t_thrs <- 24 * 60 * 60  # temporal distance, in seconds
+sp_thrs <- 5000  # spatial distance, in meters
+exclude_dur <- 2 * 24 * 60 * 60 # exclude data based on duration from deployment, in seconds
 
 # Extract environment
-env_buffer <- 3000  # radius of buffer to average environmental data around each location, in meters. (15000)
+env_buffer <- 15000  # radius of buffer to average environmental data around each location, in meters. (15000)
 all_vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE")
 env_max_date <- as.Date("2019-09-16")
 
@@ -126,12 +129,12 @@ source("analysis/tracking/scr/assess_enviro_space.R")
 # select fields (consider those to identify different stages/colonies if needed)
 # select number of simulations
 sim_n <- 30  # number of simulations to subset from the total
-#source("analysis/tracking/scr/combine_observations.R")
+source("analysis/tracking/scr/combine_observations.R")
 
 
 # Generate Presence-Absence data elimitaing overlap between observations
-source("analysis/tracking/scr/pres_abs.R")
-
-# Extract environmental data
-stack_repo <- paste0(output_data, "/stack_daily")
-source("analysis/tracking/scr/extract_stack_presabs.R.R")
+# source("analysis/tracking/scr/pres_abs.R")
+# 
+# # Extract environmental data
+# stack_repo <- paste0(output_data, "/stack_daily")
+# source("analysis/tracking/scr/extract_stack_presabs.R.R")

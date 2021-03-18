@@ -13,9 +13,9 @@
 #---------------------------------------------------------------
 # Output folder is common for all tracking species
 
-input_data <- paste0("data/out/tracking/", sp_code, "/L3_simulations")
-output_data <- paste0("results/environmental_space")
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+indir <- paste0(output_data, "/tracking/", sp_code, "/L3_simulations")
+outdir <- paste0(output_data, "/tracking/", sp_code, "/environmental_space")
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 #---------------------------------------------------------------
@@ -23,7 +23,7 @@ if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
 #---------------------------------------------------------------
 
 # List files from input data
-loc_files <- list.files(input_data, full.names = TRUE, pattern="L3_locations.csv")
+loc_files <- list.files(indir, full.names = TRUE, pattern="L3_locations.csv")
 sim <- readTrack(loc_files)
 
 # Get number of simulations
@@ -80,7 +80,7 @@ nrow <- ceiling(length(vars)/ncol)
 
 
 # define output file plot
-pngfile <- paste0(output_data,  "/", sp_code, "_environmental_space.pdf")
+pngfile <- paste0(outdir,  "/", sp_code, "_environmental_space.pdf")
 #png(file = pngfile, width=2000, height=2200, res=200)
 pdf(file = pngfile, width=ncol*5, height=nrow*2.5)
 

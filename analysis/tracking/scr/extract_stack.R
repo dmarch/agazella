@@ -21,9 +21,9 @@ registerDoParallel(cl)
 #---------------------------------------------------------------
 
 # set data paths
-input_data <- paste0("data/out/tracking/", sp_code, "/", input_folder)
-output_data <- paste0("data/out/tracking/", sp_code, "/", output_folder)
-if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
+indir <- paste0(output_data, "/tracking/", sp_code, "/", input_folder)
+outdir <- paste0(output_data, "/tracking/", sp_code, "/", output_folder)
+if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 #---------------------------------------------------------------
@@ -31,7 +31,7 @@ if (!dir.exists(output_data)) dir.create(output_data, recursive = TRUE)
 #---------------------------------------------------------------
 
 # List files from input data
-loc_files <- list.files(input_data, full.names = TRUE, pattern="L2_locations.csv")
+loc_files <- list.files(indir, full.names = TRUE, pattern="L2_locations.csv")
 
 
 #---------------------------------------------------------------
@@ -56,7 +56,7 @@ for (i in 1:length(loc_files)){
 
   # extract environmental data from stack
   enviro <- rbindlist(foreach(j=1:nrow(data), .packages = c("lubridate", "raster", "stringr"))  %dopar% {
-    extract_stack(date = data$date[j], lon = data$lon[j], lat = data$lat[j], buffer = env_buffer, repo = "data/out/environment/stack_daily")
+    extract_stack(date = data$date[j], lon = data$lon[j], lat = data$lat[j], buffer = env_buffer, repo = paste0(output_data, "/stack_daily"))
   })
   
   # combine
@@ -64,7 +64,7 @@ for (i in 1:length(loc_files)){
   
   # export track data into individual folder at output path
   id <- data$id[1]
-  out_file <- paste0(output_data, "/", id, "_L3_locations.csv")
+  out_file <- paste0(outdir, "/", id, "_L3_locations.csv")
   write.csv(data, out_file, row.names = FALSE)
   
   #------------------------------------------------
@@ -72,7 +72,7 @@ for (i in 1:length(loc_files)){
   #------------------------------------------------
   if(plotTS == TRUE){
     p <- plotEnviroTS(data, vars = names(enviro))
-    out_file <- paste0(output_data, "/", id, "_L3_locations.png")
+    out_file <- paste0(outdir, "/", id, "_L3_locations.png")
     ggsave(out_file, p, width=30, height=40, units = "cm")
   }
 
