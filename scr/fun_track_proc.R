@@ -255,6 +255,45 @@ segmentOnPort <- function(x){
 }
 #----------------------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------------
+# SToverlap       Spatio-temporal overlap between tracks
+#------------------------------------------------------------------------------------
+SToverlap <- function(real_track, sim_track, exclude_dur, sp_thrs, t_thrs){
+  
+  require(geosphere)
+  
+  # filter data based from time from first location
+  first_loc <- first(real_track$date)
+  real_track <- dplyr::filter(real_track, date > (first_loc + exclude_dur))
+  sim_track <- dplyr::filter(sim_track, date > (first_loc + exclude_dur))
+  
+  ST_overlap <- vector()
+  
+  for(i in 1:nrow(real_track)){
+    
+    # select real track data at time i
+    itime <- real_track$date[i]
+    ilon <- real_track$lon[i]
+    ilat <- real_track$lat[i]
+    
+    # filter simulated data within temporal threshold
+    isim <- dplyr::filter(sim_track, date < (itime + t_thrs), date > (itime - t_thrs))
+    
+    # calculate distance
+    idis <- distGeo(c(ilon, ilat), cbind(isim$lon, isim$lat)) 
+    
+    # check if there is any overlap
+    ST_overlap[i] <- any(idis < sp_thrs)
+  }
+  
+  # check if there is any overlap
+  ov <- any(ST_overlap == T)
+  
+  # return vector of overlap
+  return(ov)
+}
+#------------------------------------------------------------------------------------
+
 
 #------------------------------------------------------------------------------------
 # summarizeId       Sumarize tracking data per id
@@ -306,16 +345,16 @@ summarizeTrips <- function(data){
   library(dplyr)
   
   df <- data %>%
-    arrange(date) %>%  # order by date
-    group_by(id, trip) %>%  # select group info
-    summarize(date_deploy = first(date),
+    dplyr::arrange(date) %>%  # order by date
+    dplyr::group_by(id, trip) %>%  # select group info
+    dplyr::summarize(date_deploy = first(date),
               lon_deploy = first(lon),
               lat_deploy = first(lat),
               date_last = last(date),
               time_interval_h = median(as.numeric(difftime(tail(date, -1), head(date, -1), units="hours"))),
               distance_km = sum(distGeo(p1 = cbind(lon, lat)), na.rm=TRUE)/1000,  # segment distance
               n_loc = n()) %>%  # get first and last observations
-    mutate(duration_h = round(difftime(date_last, date_deploy, units="hours")))  # calculate duration of the track
+    dplyr::mutate(duration_h = round(difftime(date_last, date_deploy, units="hours")))  # calculate duration of the track
   
   return(df)
 }
