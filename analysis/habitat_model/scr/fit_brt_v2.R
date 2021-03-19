@@ -8,6 +8,17 @@ source("scr/utilsGbm.R")
 source("scr/utilsGeneral.R")
 
 
+# create a random number (Maxwell blue shark paper), so we can select variables above that
+# to make optimization faster: need to reduce amount of data. options here:
+# - define training (70%) and testing (30%). how to partition?
+# - select one location per day to reduce spatio-temporal autocorrelation
+# - reduce number of pseudo-absences (10 tracks rather than 30)
+# - optimize using a random subsample of the data (http://www.int-res.com/articles/meps_oa/m608p263.pdf)
+# - use faster lr combinations (0.05, 0.01, 0.005)
+# and in case of ties, prioritized
+# models with larger learning rates, smaller tree complexities and fewer trees to reduce overfitting (Elith et al. 2008)
+# ensure that at least 1,000 trees were included in the final model configuration (Elith et al., 2008).                                                                                                     
+
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
@@ -22,6 +33,7 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 # Import observations
 obs_file <- paste0(indir, sp_code, "_observations.csv")
+obs_file <- "data/GAZ_observations.csv"
 data <- read.csv(obs_file)
 
 # Transform skewed variables
@@ -38,14 +50,14 @@ mod_code <- "brt"
 set.seed(131)
 
 # subset data
-sdata <- data[seq(1, nrow(data), 50),]
+sdata <- data #data[seq(1, nrow(data), 50),]
 
 
-ini.nt = 1000
-max.nt = 10000
-step.nt = 1000
+ini.nt = 100
+max.nt = 15000
+step.nt = 100
 
-comb <- expand.grid(lr=c(0.005, 0.01, 0.5), tc=c(1,3,5), bf=c(0.5,0.6,0.7)) #combination
+comb <- expand.grid(lr=c(0.001, 0.005, 0.01), tc=c(1,3,5), bf=c(0.5,0.6,0.7)) #combination
 tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 #cv.deviance <- matrix(data=NA,nrow=length(tree.list),ncol=nrow(comb))#rep(0,100) #matrix of ntrees.steps vs combinations
 
@@ -53,13 +65,13 @@ tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 
 
 ## Prepare clusters
-cores <- 2  # detectCores()
+cores <- 10  # detectCores()
 cl <- makeCluster(cores)
 registerDoParallel(cl)
 
-#for (i in 1:nrow(comb)){
 
-all_list <- foreach(i=1:3, .packages=c("dismo", "gbm", "dplyr")) %dopar% {
+
+all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar% {
   #print(paste("Combination",i,"of",nrow(comb),sep=" "))
   
   # Fit model
@@ -89,18 +101,24 @@ all_list <- foreach(i=1:3, .packages=c("dismo", "gbm", "dplyr")) %dopar% {
 
   # keep deviance values for all trees
   cv_deviance <- mod$cv.values
-  if(is.null(cv_deviance)) cv_deviance <- rep(NA, (max.nt-ini.nt)/step.nt)
+  cv_deviance <- c(cv_deviance, rep(NA, length(tree.list) - length(cv_deviance)))  #fill with NA
   
   list(mod_out = mod_out, cv_deviance = cv_deviance)
 }
 
 
 ## combine outputs
-mod_out <- rbindlist(foreach(i=1:3) %dopar% all_list[[i]]$mod_out)
-cv_deviance <- rbindlist(foreach(i=1:3) %dopar% all_list[[i]]$cv_deviance, fill=TRUE)
+mod_out <- rbindlist(foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$mod_out)
+cv_deviance <- bind_cols(foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$cv_deviance)
+names(cv_deviance) <- paste0("comb", 1:nrow(comb))
+cv_deviance$ntrees <- tree.list
 
 ## stop clusters
 stopCluster(cl)
 
 ## export outputs
+outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.csv")
+write.csv(mod_out, outfile, row.names = FALSE)
 
+outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_cv_deviance.csv")
+write.csv(cv_deviance, outfile, row.names = FALSE)

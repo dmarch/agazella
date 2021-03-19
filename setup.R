@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------------------
 
 # set computer
-cpu <- "pc"  # "pc", "mac"
+cpu <- "server"  # "pc", "mac". "server"
 
 # If you want to give MaxEnt (the Java virtual machine that runs it) more memory,
 # you can do that by running something like this (for 1 GB) before you load the dismo library.
@@ -27,7 +27,7 @@ crs_proj <- "+init=epsg:4326"
 # Set main data paths
 if(cpu == "pc") main_dir <- "D:/Dropbox/Dropbox/GitData/agazella"
 if(cpu == "mac") main_dir <- "~/Dropbox/GitData/agazella"
-
+if(cpu == "server") main_dir <- "data"
 
 # 2. Create data paths
 # The project involves creating three main folders into the working directory to manage the data:
