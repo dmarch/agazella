@@ -8,11 +8,10 @@ source("scr/utilsGbm.R")
 source("scr/utilsGeneral.R")
 
 
-# create a random number (Maxwell blue shark paper), so we can select variables above that
 # to make optimization faster: need to reduce amount of data. options here:
 # - define training (70%) and testing (30%). how to partition?
 # - select one location per day to reduce spatio-temporal autocorrelation
-# - reduce number of pseudo-absences (10 tracks rather than 30)
+# - reduce number of pseudo-absences: Simulate 20 tracks (Hazen et al. 2018, Reisinger et al. 2018)
 # - optimize using a random subsample of the data (http://www.int-res.com/articles/meps_oa/m608p263.pdf)
 # - use faster lr combinations (0.05, 0.01, 0.005)
 # and in case of ties, prioritized
@@ -33,12 +32,28 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 # Import observations
 obs_file <- paste0(indir, sp_code, "_observations.csv")
-obs_file <- "data/GAZ_observations.csv"
+#obs_file <- "data/GAZ_observations.csv"
 data <- read.csv(obs_file)
 
 # Transform skewed variables
 data$EKE <- log1p(data$EKE)
 data$CHL <- log1p(data$CHL)
+
+# Generate Random Number
+# We also included a random number between 1 and 100 to serve as an indicator for variables that
+# have influence greater or less than random (Scales et al., 2017; Soykan, Eguchi, Kohin, & Dewar, 2014);
+# only variables with influence greater than the random number were included in the final models.
+data$RN <- sample.int(100, size=nrow(data), replace=T, prob=NULL)
+vars <- c(vars, "RN")
+
+# Training and testing
+# we cross‐validated the models by running a training model by randomly choosing 75% of the entire dataset,
+# then comparing model predictions against the remaining 25% of the data, while maintaining the same ratio of presences
+# to pseudo‐absences. (Maxwell 2019)
+
+# Random subsample of data to reduce amount of data
+set.seed(134)
+sdata <- stratified(data, c("occ", "id", "day"), 0.25)
 
 
 #-----------------------------------------------------------------
@@ -48,16 +63,11 @@ data$CHL <- log1p(data$CHL)
 mod_code <- "brt"
 
 set.seed(131)
+ini.nt = 1000
+max.nt = 20000
+step.nt = 1000
 
-# subset data
-sdata <- data #data[seq(1, nrow(data), 50),]
-
-
-ini.nt = 100
-max.nt = 15000
-step.nt = 100
-
-comb <- expand.grid(lr=c(0.001, 0.005, 0.01), tc=c(1,3,5), bf=c(0.5,0.6,0.7)) #combination
+comb <- expand.grid(lr=c(0.005, 0.01, 0.05), tc=c(1,3,5), bf=c(0.5,0.6,0.7)) #combination
 tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 #cv.deviance <- matrix(data=NA,nrow=length(tree.list),ncol=nrow(comb))#rep(0,100) #matrix of ntrees.steps vs combinations
 
@@ -122,3 +132,16 @@ write.csv(mod_out, outfile, row.names = FALSE)
 
 outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_cv_deviance.csv")
 write.csv(cv_deviance, outfile, row.names = FALSE)
+
+
+
+
+
+# Confidence intervals were calculated across 10 boosted regression tree
+# model fits to account for model stochasticity (Hazen et al. 2018)
+
+
+# For each habitat selection model (i.e., each life-history stage of each species), we fitted the model 50 times.
+# For each of the 50 iterations, we used the parameter values chosen for the final model, but we sampled
+# half the data (with replacement) to fit the model. (Hindell et al. 2020)
+

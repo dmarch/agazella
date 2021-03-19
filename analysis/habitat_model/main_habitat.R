@@ -3,7 +3,9 @@
 #---------------------------------------------------------------
 # This script processes data up to the species level.
 # Community level is analysis in another script.
-
+#
+# In this paper, they compare both MaxEnt and BRT: https://onlinelibrary.wiley.com/doi/full/10.1111/ddi.13149
+#
 source("setup.R")
 source("scr/fun_habitat_plot.R")
 #source("conf/config.R")

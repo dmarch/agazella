@@ -3,14 +3,14 @@
 #--------------------------------------------------------------------------------
 
 # set computer
-cpu <- "server"  # "pc", "mac". "server"
+cpu <- "mac"  # "pc", "mac". "server"
 
 # If you want to give MaxEnt (the Java virtual machine that runs it) more memory,
 # you can do that by running something like this (for 1 GB) before you load the dismo library.
 options(java.parameters = "-Xmx4g" )
 
 # Load required packages
-pacman::p_load("data.table", "tidyr", "dplyr", "lubridate", "openxlsx", "stringr", "reshape2", # data manipulation
+pacman::p_load("data.table", "tidyr", "dplyr", "lubridate", "openxlsx", "stringr", "reshape2", "splitstackshape", # data manipulation
                "ggplot2", "egg", "pals", "viridis", "gridExtra", "grid", "scales",  # plots
                "foreach", "doParallel",  # parallel computing
                "move", "moveVis", "SDLfilter", "adehabitatHR", "foieGras", "argosfilter",  # movement
