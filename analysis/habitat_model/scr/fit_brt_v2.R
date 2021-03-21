@@ -230,11 +230,8 @@ dev.off()
 
 
 find.int <- gbm.interactions(mod_full)
-
 find.int$interactions
-
 find.int$rank.list
-
 
 gbm.perspec(mod_full, 5, 2)
 gbm.perspec(mod_full, 5, 4)
@@ -243,17 +240,64 @@ gbm.perspec(mod_full, 6, 5)
 #-----------------------------------------------------------------
 # Boosted Regression Tree - Predict
 #-----------------------------------------------------------------
-
-
-
-# Confidence intervals were calculated across 10 boosted regression tree
-# model fits to account for model stochasticity (Hazen et al. 2018)
-
-
 # For each habitat selection model (i.e., each life-history stage of each species), we fitted the model 50 times.
 # For each of the 50 iterations, we used the parameter values chosen for the final model, but we sampled
-# half the data (with replacement) to fit the model. (Hindell et al. 2020)
-
-
+# half the data (with replacement) to fit the model. (Hindell et al. 2020).
+#
+# Confidence intervals were calculated across 10 boosted regression tree
+# model fits to account for model stochasticity (Hazen et al. 2018) 
+#
 # preserve 1/0 and stratify across individuals
+
+# Set output directory
+# Each bootstrap model is stored here
+outdir_bootstrap <- paste0(outdir, "/bootstrap/")
+
+# Define number of bootstrap models
+n.boot <- 10  # number of model fits
+
+# Get hyper-parameters from full model
+# Keep CV parameters
+mod_full_out <- data.frame(
+  tree.complexity = mod_full$interaction.depth,
+  learning.rate = mod_full$shrinkage,
+  bag.fraction = mod_full$bag.fraction,
+  n.trees = mod_full$n.trees
+) 
+
+## Prepare clusters
+cores <- n.boot
+cl <- makeCluster(cores)
+registerDoParallel(cl)
+
+foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr")) %dopar% {
+
+  # subset data
+  idata <- stratified(sdata, c("occ", "id"), 0.5, replace = TRUE)
+  
+  # fit BRT
+  mod_boot <- gbm.fixed(data = idata,             # data.frame with data
+                       gbm.x = pred_list,          # predictor variables
+                       gbm.y = "occ",            # response variable
+                       family = "bernoulli",  # the nature of errror structure
+                       tree.complexity = mod_full_out$tree.complexity,   # tree complexity
+                       learning.rate = mod_full_out$learning.rate,  # learning rate
+                       bag.fraction = mod_full_out$bag.fraction,    # bag fraction
+                       n.trees = mod_full_out$n.trees) 
+  
+  # store model
+  outfile <- paste0(outdir_bootstrap, "/", sp_code, "_", mod_code, "_", str_pad(i, 2, pad = "0"), ".rds")
+  saveRDS(mod_boot, file = outfile)  # save model
+}
+
+## stop clusters
+stopCluster(cl)
+
+
+
+# For predictions: load environmental stak for day (i). Predict for full model. Predict for each bootstrap - add into stack - summarize
+
+
+
+# 
 
