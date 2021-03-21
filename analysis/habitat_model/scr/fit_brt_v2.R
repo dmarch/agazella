@@ -67,11 +67,11 @@ sdata <- stratified(data, c("occ", "id", "day"), 0.25)
 mod_code <- "brt"
 
 set.seed(131)
-ini.nt = 1000
-max.nt = 20000
-step.nt = 1000
+ini.nt = 100
+max.nt = 30000
+step.nt = 100
 
-comb <- expand.grid(lr=c(0.005, 0.01, 0.05), tc=c(1,3,5), bf=c(0.5,0.6,0.7)) #combination
+comb <- expand.grid(lr=c(0.005, 0.01, 0.05, 0.1), tc=c(1,3,5), bf=c(0.5, 0.6, 0.7)) #combination
 tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 #cv.deviance <- matrix(data=NA,nrow=length(tree.list),ncol=nrow(comb))#rep(0,100) #matrix of ntrees.steps vs combinations
 
@@ -79,7 +79,7 @@ tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 
 
 ## Prepare clusters
-cores <- 10  # detectCores()
+cores <- 36  # detectCores()
 cl <- makeCluster(cores)
 registerDoParallel(cl)
 
@@ -116,7 +116,13 @@ all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar
   cv_deviance <- mod$cv.values
   cv_deviance <- c(cv_deviance, rep(NA, length(tree.list) - length(cv_deviance)))  #fill with NA
   
-  list(mod_out = mod_out, cv_deviance = cv_deviance)
+  # selected variables
+  pred_order <- summary(mod)$var
+  rn_position <- which(pred_order == "RN")
+  pred_list <- as.character(pred_order[1:(rn_position-1)])
+  
+  
+  list(mod_out = mod_out, cv_deviance = cv_deviance, pred_list = pred_list)
 }
 
 
@@ -252,6 +258,8 @@ gbm.perspec(mod_full, 6, 5)
 # Set output directory
 # Each bootstrap model is stored here
 outdir_bootstrap <- paste0(outdir, "/bootstrap/")
+if (!dir.exists(outdir_bootstrap)) dir.create(outdir_bootstrap, recursive = TRUE)
+
 
 # Define number of bootstrap models
 n.boot <- 10  # number of model fits
@@ -270,7 +278,7 @@ cores <- n.boot
 cl <- makeCluster(cores)
 registerDoParallel(cl)
 
-foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr")) %dopar% {
+foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "splitstackshape", "stringr")) %dopar% {
 
   # subset data
   idata <- stratified(sdata, c("occ", "id"), 0.5, replace = TRUE)
@@ -286,7 +294,7 @@ foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr")) %dopar% {
                        n.trees = mod_full_out$n.trees) 
   
   # store model
-  outfile <- paste0(outdir_bootstrap, "/", sp_code, "_", mod_code, "_", str_pad(i, 2, pad = "0"), ".rds")
+  outfile <- paste0(outdir_bootstrap, "/", str_pad(i, 2, pad = "0"), "_", sp_code, "_", mod_code, "_boot.rds")
   saveRDS(mod_boot, file = outfile)  # save model
 }
 
