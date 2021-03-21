@@ -52,13 +52,17 @@ vars <- c(vars, "RN")
 # to pseudo‐absences. (Maxwell 2019)
 
 # Random subsample of data to reduce amount of data
+data$day <- as.Date(data$date)
 set.seed(134)
 sdata <- stratified(data, c("occ", "id", "day"), 0.25)
 
 
 #-----------------------------------------------------------------
-# Boosted Regression Tree
+# Boosted Regression Tree - Optimization of hyper-parameters
 #-----------------------------------------------------------------
+# To improve:
+#For each combination: keep list with variable importance, gbm.simplify is very low, so we can use the criteria of being above the RN
+
 
 mod_code <- "brt"
 
@@ -80,7 +84,6 @@ cl <- makeCluster(cores)
 registerDoParallel(cl)
 
 
-
 all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar% {
   #print(paste("Combination",i,"of",nrow(comb),sep=" "))
   
@@ -95,7 +98,7 @@ all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar
                   learning.rate = comb$lr[i],  # learning rate
                   bag.fraction = comb$bf[i],    # bag fraction
                   n.trees = ini.nt, step.size = step.nt, max.trees = max.nt)    
-
+  
   
   # Keep CV parameters
   mod_out <- data.frame(
@@ -108,7 +111,7 @@ all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar
     deviance = mod$self.statistics$mean.resid,
     cv.deviance = mod$cv.statistics$deviance.mean
   ) 
-
+  
   # keep deviance values for all trees
   cv_deviance <- mod$cv.values
   cv_deviance <- c(cv_deviance, rep(NA, length(tree.list) - length(cv_deviance)))  #fill with NA
@@ -135,6 +138,112 @@ write.csv(cv_deviance, outfile, row.names = FALSE)
 
 
 
+#-----------------------------------------------------------------
+# Boosted Regression Tree - Variable selection
+#-----------------------------------------------------------------
+
+# fir BRT with selected parameters
+mod <- gbm.step(data = sdata,             # data.frame with data
+                gbm.x = vars,          # predictor variables
+                gbm.y = "occ",            # response variable
+                family = "bernoulli",  # the nature of errror structure
+                tree.complexity = 5,   # tree complexity
+                learning.rate = 0.005,  # learning rate
+                bag.fraction = 0.5,    # bag fraction
+                n.trees = ini.nt, step.size = step.nt, max.trees = max.nt)    
+
+
+# plot variable importance
+var_imp <- summary(mod)$rel.inf
+names(var_imp) <- summary(mod)$var
+
+# list with variables
+pred_order <- summary(mod)$var
+rn_position <- which(pred_order == "RN")
+pred_list <- as.character(pred_order[1:(rn_position-1)])
+
+# # simplify
+# mod_simp <- gbm.simplify(mod, n.folds = 10, n.drops = "auto", alpha = 1, prev.stratify = TRUE, 
+#              eval.data = NULL, plot = TRUE)
+
+
+# gbm.simplify - version 2.9 
+# simplifying gbm.step model for NA with 14 predictors and 33105 observations 
+# original deviance = 0.1732(0.0023)
+# variable removal will proceed until average change exceeds the original se
+# creating initial models...
+# dropping predictor: 1 2 3 4 5 6
+# processing final dropping of variables with full data
+# 1-RN
+# 2-EKE
+# 3-SSH
+# 4-SSTg
+# 5-SIC
+# 6-SALg
+
+# Save model
+#saveRDS(mod_simp, file = paste0(outdir, "/", sp_code, "_", mod_code, "_simp.rds"))  # save model
+
+
+
+
+#-----------------------------------------------------------------
+# Boosted Regression Tree - Fit full model
+#-----------------------------------------------------------------
+
+# remove variables not selected
+# fir BRT with selected parameters
+mod_full <- gbm.step(data = sdata,             # data.frame with data
+                gbm.x = pred_list,          # predictor variables
+                gbm.y = "occ",            # response variable
+                family = "bernoulli",  # the nature of errror structure
+                tree.complexity = 5,   # tree complexity
+                learning.rate = 0.005,  # learning rate
+                bag.fraction = 0.5,    # bag fraction
+                n.trees = ini.nt, step.size = step.nt, max.trees = max.nt) 
+
+
+# maximum tree limit reached - results may not be optimal 
+# - refit with faster learning rate or increase maximum number of trees
+
+# Save model
+saveRDS(mod_full, file = paste0(outdir, "/", sp_code, "_", mod_code, ".rds"))  # save model
+
+# Plot variable contribution using radar plot
+var_imp <- summary(mod_full)$rel.inf
+names(var_imp) <- summary(mod_full)$var
+pngfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_var_radar.png")
+png(pngfile, width=1000, height=1000, res=150)
+radarPlot(var_imp, var_order=pred_list)
+dev.off()
+
+# Plot response curves
+pngfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_response.png")
+png(pngfile, width=1500, height=1000, res=200)
+gbm.plot(mod_full, n.plots=12)
+dev.off()
+
+
+#-----------------------------------------------------------------
+# Boosted Regression Tree - Interactions
+#-----------------------------------------------------------------
+
+
+find.int <- gbm.interactions(mod_full)
+
+find.int$interactions
+
+find.int$rank.list
+
+
+gbm.perspec(mod_full, 5, 2)
+gbm.perspec(mod_full, 5, 4)
+gbm.perspec(mod_full, 6, 5)
+
+#-----------------------------------------------------------------
+# Boosted Regression Tree - Predict
+#-----------------------------------------------------------------
+
 
 
 # Confidence intervals were calculated across 10 boosted regression tree
@@ -144,4 +253,7 @@ write.csv(cv_deviance, outfile, row.names = FALSE)
 # For each habitat selection model (i.e., each life-history stage of each species), we fitted the model 50 times.
 # For each of the 50 iterations, we used the parameter values chosen for the final model, but we sampled
 # half the data (with replacement) to fit the model. (Hindell et al. 2020)
+
+
+# preserve 1/0 and stratify across individuals
 
