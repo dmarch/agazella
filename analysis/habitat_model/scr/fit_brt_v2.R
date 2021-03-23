@@ -67,11 +67,11 @@ sdata <- stratified(data, c("occ", "id", "day"), 0.25)
 mod_code <- "brt"
 
 set.seed(131)
-ini.nt = 100
+ini.nt = 50
 max.nt = 30000
-step.nt = 100
+step.nt = 50
 
-comb <- expand.grid(lr=c(0.005, 0.01, 0.05, 0.1), tc=c(1,3,5), bf=c(0.5, 0.6, 0.7)) #combination
+comb <- expand.grid(lr=c(0.005, 0.01, 0.05), tc=c(1,3,5), bf=c(0.5, 0.6, 0.7)) #combination
 tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 #cv.deviance <- matrix(data=NA,nrow=length(tree.list),ncol=nrow(comb))#rep(0,100) #matrix of ntrees.steps vs combinations
 
@@ -79,58 +79,66 @@ tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 
 
 ## Prepare clusters
-cores <- 36  # detectCores()
+cores <- 27  # detectCores()
 cl <- makeCluster(cores)
 registerDoParallel(cl)
 
 
 all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar% {
   #print(paste("Combination",i,"of",nrow(comb),sep=" "))
-  
+
   # Fit model
   # Uses a default 10-fold cross-validation
   # faster learning rate means larger values
-  mod <- gbm.step(data = sdata,             # data.frame with data
+  mod <- tryCatch(
+                  gbm.step(data = sdata,             # data.frame with data
                   gbm.x = vars,          # predictor variables
                   gbm.y = "occ",            # response variable
                   family = "bernoulli",  # the nature of errror structure
                   tree.complexity = comb$tc[i],   # tree complexity
                   learning.rate = comb$lr[i],  # learning rate
                   bag.fraction = comb$bf[i],    # bag fraction
-                  n.trees = ini.nt, step.size = step.nt, max.trees = max.nt)    
+                  n.trees = ini.nt, step.size = step.nt, max.trees = max.nt)   
+                  , error = function(e) return(NA))
   
   
-  # Keep CV parameters
-  mod_out <- data.frame(
-    tree.complexity = mod$interaction.depth,
-    learning.rate = mod$shrinkage,
-    bag.fraction = mod$bag.fraction,
-    n.trees = mod$n.trees,
-    AUC = mod$self.statistics$discrimination,
-    cv.AUC = mod$cv.statistics$discrimination.mean,
-    deviance = mod$self.statistics$mean.resid,
-    cv.deviance = mod$cv.statistics$deviance.mean
-  ) 
-  
-  # keep deviance values for all trees
-  cv_deviance <- mod$cv.values
-  cv_deviance <- c(cv_deviance, rep(NA, length(tree.list) - length(cv_deviance)))  #fill with NA
-  
-  # selected variables
-  pred_order <- summary(mod)$var
-  rn_position <- which(pred_order == "RN")
-  pred_list <- as.character(pred_order[1:(rn_position-1)])
-  
-  
-  list(mod_out = mod_out, cv_deviance = cv_deviance, pred_list = pred_list)
+  if(!is.na(mod)) {
+    # Keep CV parameters
+    mod_out <- data.frame(
+      tree.complexity = mod$interaction.depth,
+      learning.rate = mod$shrinkage,
+      bag.fraction = mod$bag.fraction,
+      n.trees = mod$n.trees,
+      AUC = mod$self.statistics$discrimination,
+      cv.AUC = mod$cv.statistics$discrimination.mean,
+      deviance = mod$self.statistics$mean.resid,
+      cv.deviance = mod$cv.statistics$deviance.mean
+    ) 
+    
+    # keep deviance values for all trees
+    cv_deviance <- mod$cv.values
+    cv_deviance <- c(cv_deviance, rep(NA, length(tree.list) - length(cv_deviance)))  #fill with NA
+    
+    # selected variables
+    pred_order <- summary(mod)$var
+    rn_position <- which(pred_order == "RN")
+    pred_list <- as.character(pred_order[1:(rn_position-1)])
+    
+    
+    list(mod_out = mod_out, cv_deviance = cv_deviance, pred_list = pred_list)
+  }
+
 }
 
 
 ## combine outputs
 mod_out <- rbindlist(foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$mod_out)
-cv_deviance <- bind_cols(foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$cv_deviance)
+cv_deviance <- dplyr::bind_cols(foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$cv_deviance)
 names(cv_deviance) <- paste0("comb", 1:nrow(comb))
 cv_deviance$ntrees <- tree.list
+
+predict_list <- foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$pred_list
+
 
 ## stop clusters
 stopCluster(cl)
@@ -143,70 +151,25 @@ outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_cv_deviance.csv")
 write.csv(cv_deviance, outfile, row.names = FALSE)
 
 
-
-#-----------------------------------------------------------------
-# Boosted Regression Tree - Variable selection
-#-----------------------------------------------------------------
-
-# fir BRT with selected parameters
-mod <- gbm.step(data = sdata,             # data.frame with data
-                gbm.x = vars,          # predictor variables
-                gbm.y = "occ",            # response variable
-                family = "bernoulli",  # the nature of errror structure
-                tree.complexity = 5,   # tree complexity
-                learning.rate = 0.005,  # learning rate
-                bag.fraction = 0.5,    # bag fraction
-                n.trees = ini.nt, step.size = step.nt, max.trees = max.nt)    
-
-
-# plot variable importance
-var_imp <- summary(mod)$rel.inf
-names(var_imp) <- summary(mod)$var
-
-# list with variables
-pred_order <- summary(mod)$var
-rn_position <- which(pred_order == "RN")
-pred_list <- as.character(pred_order[1:(rn_position-1)])
-
-# # simplify
-# mod_simp <- gbm.simplify(mod, n.folds = 10, n.drops = "auto", alpha = 1, prev.stratify = TRUE, 
-#              eval.data = NULL, plot = TRUE)
-
-
-# gbm.simplify - version 2.9 
-# simplifying gbm.step model for NA with 14 predictors and 33105 observations 
-# original deviance = 0.1732(0.0023)
-# variable removal will proceed until average change exceeds the original se
-# creating initial models...
-# dropping predictor: 1 2 3 4 5 6
-# processing final dropping of variables with full data
-# 1-RN
-# 2-EKE
-# 3-SSH
-# 4-SSTg
-# 5-SIC
-# 6-SALg
-
-# Save model
-#saveRDS(mod_simp, file = paste0(outdir, "/", sp_code, "_", mod_code, "_simp.rds"))  # save model
-
-
-
-
 #-----------------------------------------------------------------
 # Boosted Regression Tree - Fit full model
 #-----------------------------------------------------------------
 
+
+mod_out$tree.complexity[8]
+pred_list <- vars[vars %in% all_list[[8]]$pred_list]
+plot(tree.list, all_list[[8]]$cv_deviance, type="l")
+
 # remove variables not selected
 # fir BRT with selected parameters
-mod_full <- gbm.step(data = sdata,             # data.frame with data
+mod_full <- gbm.fixed(data = sdata,             # data.frame with data
                 gbm.x = pred_list,          # predictor variables
                 gbm.y = "occ",            # response variable
                 family = "bernoulli",  # the nature of errror structure
                 tree.complexity = 5,   # tree complexity
-                learning.rate = 0.005,  # learning rate
+                learning.rate = 0.01,  # learning rate
                 bag.fraction = 0.5,    # bag fraction
-                n.trees = ini.nt, step.size = step.nt, max.trees = max.nt) 
+                n.trees = 7700) 
 
 
 # maximum tree limit reached - results may not be optimal 
