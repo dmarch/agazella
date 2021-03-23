@@ -318,9 +318,9 @@ import_catalog <- function(file, provider_paths=NULL){
 # prepareGrid        Prepare raster to add into stack
 #---------------------------------------------------------------------------------
 prepareGrid <- function(r, m, method, name){
-  rc <- crop(r, m)  # crop by extent
-  rs <- resample(r, m, method=method)  # resample
-  rm <- mask(rs, m)  # mask
+  rc <- raster::crop(r, m)  # crop by extent
+  rs <- raster::resample(r, m, method=method)  # resample
+  rm <- raster::mask(rs, m)  # mask
   names(rm) <- name
   return(rm)
 }
