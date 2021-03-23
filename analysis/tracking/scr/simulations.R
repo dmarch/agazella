@@ -89,10 +89,10 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "availability", "data.table", "r
     
     ## generate simulations
     data_list <- list()
-    s <- 1
+    #s <- 1
     
-    #for (s in 1:sim_n){
-    while(s <= sim_n){  
+    for (s in 1:sim_n){
+    #while(s <= sim_n){  
       # Now we can use that fitted model to generate new tracks. 
       # Simulated track are fixed to the same start always. End points fixed for central-place foragers
       # Land mask is applied:
@@ -106,12 +106,12 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "availability", "data.table", "r
       df <- data.frame(id = i, trip = trips[j], nsim = s, simid = paste(trips[j], sim_code, sep="_"), date = simu$ts, lon = simu$xs[,1], lat = simu$xs[,2])
       
       ## check overlap with observed track
-      ov <- SToverlap(real_track = d, sim_track = df, exclude_dur = exclude_dur, sp_thrs = sp_thrs, t_thrs = t_thrs)
-      if(ov == T) next
+      #ov <- SToverlap(real_track = d, sim_track = df, exclude_dur = exclude_dur, sp_thrs = sp_thrs, t_thrs = t_thrs)
+      #if(ov == T) next
       
       ## append data.frame into list
       data_list[[s]] <- df
-      s <- s + 1
+      #s <- s + 1
     }
 
     ## combine simulations into a single data.frame

@@ -36,13 +36,13 @@ reg_time_step <- 6  # time step to interpolate positions, in hours
 mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
 
 # Simulations
-sim_n <- 100  # number of simulations
+sim_n <- 50  # number of simulations
 sim_fix_last <- FALSE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations
 sim_by_trip <- TRUE  # generate simulation by trip rather than full track
-t_thrs <- 24 * 60 * 60  # temporal distance, in seconds
-sp_thrs <- 5000  # spatial distance, in meters
-exclude_dur <- 2 * 24 * 60 * 60 # exclude data based on duration from deployment, in seconds
+#t_thrs <- 24 * 60 * 60  # temporal distance, in seconds
+#sp_thrs <- 5000  # spatial distance, in meters
+#exclude_dur <- 2 * 24 * 60 * 60 # exclude data based on duration from deployment, in seconds
 
 # Extract environment
 env_buffer <- 15000  # radius of buffer to average environmental data around each location, in meters. (15000)
@@ -108,33 +108,33 @@ source("analysis/tracking/scr/simulations.R")
 # Step 6. Extract environmental data
 # Note: First requires creating a daily stack
 
-# Observed
-input_folder <- "L2_locations"
-output_folder <- "L3_locations"
-plotTS <- TRUE
-source("analysis/tracking/scr/extract_stack.R")
-
-# Simulated
-cores <- 10  # reduce number of cores
-input_folder <- "L2_simulations"
-output_folder <- "L3_simulations"
-plotTS <- FALSE
-source("analysis/tracking/scr/extract_stack.R")
+# # Observed
+# input_folder <- "L2_locations"
+# output_folder <- "L3_locations"
+# plotTS <- TRUE
+# source("analysis/tracking/scr/extract_stack.R")
+# 
+# # Simulated
+# cores <- 10  # reduce number of cores
+# input_folder <- "L2_simulations"
+# output_folder <- "L3_simulations"
+# plotTS <- FALSE
+# source("analysis/tracking/scr/extract_stack.R")
 
 # Step 7. Assess the number of simulations accounting for their environmental space
-source("analysis/tracking/scr/assess_enviro_space.R")
+# source("analysis/tracking/scr/assess_enviro_space.R")
 
 # Step 8. Prepare data for habitat models
 # combines presence/absence
 # select fields (consider those to identify different stages/colonies if needed)
 # select number of simulations
-sim_n <- 30  # number of simulations to subset from the total
-source("analysis/tracking/scr/combine_observations.R")
+#sim_n <- 30  # number of simulations to subset from the total
+#source("analysis/tracking/scr/combine_observations.R")
 
 
 # Generate Presence-Absence data elimitaing overlap between observations
-# source("analysis/tracking/scr/pres_abs.R")
-# 
+source("analysis/tracking/scr/pres_abs_v2.R")
+ 
 # # Extract environmental data
-# stack_repo <- paste0(output_data, "/stack_daily")
-# source("analysis/tracking/scr/extract_stack_presabs.R.R")
+stack_repo <- paste0(output_data, "/stack_daily")
+source("analysis/tracking/scr/extract_stack_presabs.R")
