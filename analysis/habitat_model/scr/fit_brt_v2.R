@@ -4,8 +4,8 @@
 # create a grid of hyper-parameters (learning rate, depth, min obs in nodes, etc...)
 # and build a full model on each combination of parameters in parallel. 
 
-source("scr/utilsGbm.R")
-source("scr/utilsGeneral.R")
+#source("scr/utilsGbm.R")
+#source("scr/utilsGeneral.R")
 
 
 # to make optimization faster: need to reduce amount of data. options here:
@@ -52,9 +52,17 @@ vars <- c(vars, "RN")
 # to pseudo‐absences. (Maxwell 2019)
 
 # Random subsample of data to reduce amount of data
-data$day <- as.Date(data$date)
+#data$day <- as.Date(data$date)
 set.seed(134)
-sdata <- stratified(data, c("occ", "id", "day"), 0.25)
+sdata <- stratified(data, c("occ", "date"), 0.25)
+
+
+# Random selection of absence data
+# get number of presence observations
+# estimate number of absences with ratio 1:3
+# random subsample of absence observations
+
+
 
 
 #-----------------------------------------------------------------
@@ -68,7 +76,7 @@ mod_code <- "brt"
 
 set.seed(131)
 ini.nt = 50
-max.nt = 30000
+max.nt = 15000
 step.nt = 50
 
 comb <- expand.grid(lr=c(0.005, 0.01, 0.05), tc=c(1,3,5), bf=c(0.5, 0.6, 0.7)) #combination
@@ -131,12 +139,16 @@ all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar
 }
 
 
-## combine outputs
+## combine model outputs
 mod_out <- rbindlist(foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$mod_out)
-cv_deviance <- dplyr::bind_cols(foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$cv_deviance)
-names(cv_deviance) <- paste0("comb", 1:nrow(comb))
-cv_deviance$ntrees <- tree.list
+mod_out$id <- 1:nrow(mod_out)
 
+## combine deviance outputs
+cv_deviance <- rbindlist(foreach(i=1:nrow(comb)) %dopar% list(cv_deviance = all_list[[i]]$cv_deviance))
+cv_deviance$id <- rep(mod_out$id, each=length(tree.list))
+cv_deviance$ntrees <- rep(tree.list, nrow(mod_out))
+
+## get selected variables
 predict_list <- foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$pred_list
 
 

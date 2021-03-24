@@ -36,7 +36,7 @@ reg_time_step <- 6  # time step to interpolate positions, in hours
 mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
 
 # Simulations
-sim_n <- 50  # number of simulations
+sim_n <- 30  # number of simulations
 sim_fix_last <- FALSE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations
 sim_by_trip <- TRUE  # generate simulation by trip rather than full track
@@ -61,7 +61,7 @@ source("scr/fun_track_reading.R")  # read multiple tracking data formats
 source("scr/fun_track_plot.R")  # plot tracking data
 source("scr/fun_track_proc.R")  # miscellanea of processing functions
 source("scr/fun_enviro.R")  # function to process environmental data
-
+source("scr/fun_survey.R")
 
 #---------------------------------------------------------------
 # 3. Import external data
@@ -132,7 +132,11 @@ source("analysis/tracking/scr/simulations.R")
 #source("analysis/tracking/scr/combine_observations.R")
 
 
-# Generate Presence-Absence data elimitaing overlap between observations
+# Generate Presence-Absence data eliminating overlap between observations
+cores <- 40
+res <- 0.1  # size of spatial bin, in decimal degrees
+temporal_thrs <- 2  # length of temporal bin, in days
+sim_n <- 30  # select number of simulations to use
 source("analysis/tracking/scr/pres_abs_v2.R")
  
 # # Extract environmental data

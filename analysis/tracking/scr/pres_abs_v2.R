@@ -9,18 +9,10 @@
 
 
 
-source("../movemed-multispecies/scr/fun_survey.R")
 
 
-# Set parameters for generating pseudoabsences
-res <- 0.05  # size of spatial bin, in decimal degrees
-temporal_thrs <- 1  # length of temporal bin, in days
 
-#---------------------------------------------------------------
-# Prepare cluster
-#---------------------------------------------------------------
-#cl <- makeCluster(cores)
-#registerDoParallel(cl)
+
 
 
 #---------------------------------------------------------------
@@ -34,26 +26,52 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 
+#---------------------------------------------------------------
+# 2. Import presence and absences
+#---------------------------------------------------------------
+
+
+# Presence data (observed state-space models)
+loc_files <- list.files(ssm_data, full.names = TRUE, pattern="L2_locations.csv")
+pres <- readTrack(loc_files)
+pres$date <- as.Date(pres$date)  # transform date-time into date format
+
+# Absence data (simulations)
+loc_files <- list.files(sim_data, full.names = TRUE, pattern="L2_locations.csv")
+abs <- readTrack(loc_files)
+
+# Filter data by number of simulations
+abs <- filter(abs, nsim <= sim_n)
+
+# transform date-time into date format
+abs$date <- as.Date(abs$date)
+
+
 
 #---------------------------------------------------------------
-# 2. Import oceanmask
+# 2. Generate oceanmask
 #---------------------------------------------------------------
+# Create a ocean mask to grid all observations
+# It is based on the following parameters:
+# res: resolution
+# ext: extent estimated from the data
 
 # Import oceanmask
-oceanmask <- raster( paste0(output_data, "/stack_daily/2019/02/20190220_enviro.grd"))
-grid <- oceanmask+0  # this makes the raster to be in memory and make simulations faster
+#oceanmask <- raster( paste0(output_data, "/stack_daily/2019/02/20190220_enviro.grd"))
+#grid <- oceanmask+0  # this makes the raster to be in memory and make simulations faster
+
+xmin <- floor(min(min(pres$lon), min(abs$lon)))
+xmax <- ceiling(max(max(pres$lon), max(abs$lon)))
+ymin <- floor(min(min(pres$lat), min(abs$lat)))
+ymax <- ceiling(max(max(pres$lat), max(abs$lat)))
+
+ext <- extent(xmin, xmax, ymin, ymax)
+grid <- raster(ext, res = res, crs = crs("+proj=longlat +datum=WGS84"))
 
 
 #---------------------------------------------------------------
 # 3. Generate presences
 #---------------------------------------------------------------
-
-# Presence data (observed state-space models)
-loc_files <- list.files(ssm_data, full.names = TRUE, pattern="L2_locations.csv")
-pres <- readTrack(loc_files)
-
-# transform date-time into date format
-pres$date <- as.Date(pres$date)
 
 # Extract cell ID from raster for each observation
 pres$cell <- cellFromXY(grid, cbind(pres$lon, pres$lat))
@@ -73,16 +91,6 @@ cpres$lat <- xy[,"y"]
 #---------------------------------------------------------------
 # 4. Generate absences
 #---------------------------------------------------------------
-
-# Absence data (simulations)
-loc_files <- list.files(sim_data, full.names = TRUE, pattern="L2_locations.csv")
-abs <- readTrack(loc_files)
-
-# Filter data by number of simulations
-abs <- filter(abs, nsim <= sim_n)
-
-# transform date-time into date format
-abs$date <- as.Date(abs$date)
 
 # Extract cell ID from raster for each observation
 abs$cell <- cellFromXY(grid, cbind(abs$lon, abs$lat))
@@ -108,7 +116,7 @@ cabs$lat <- xy[,"y"]
 #--------------------------------------------------------------------------
 
 # Register number of cores to use in parallel
-cl <- parallel::makeCluster(10) # 10 cores work at around 63% CPU (no major problem with RAM)
+cl <- parallel::makeCluster(cores) # 10 cores work at around 63% CPU (no major problem with RAM)
 registerDoParallel(cl)
 
 # for each absence, check if there is a presence in adjacent cells within the temporal period defined
