@@ -22,8 +22,8 @@ source("scr/fun_enviro.R")  # function to process environmental data
 cores <- 10
 
 # Set raster resolution and extent
-res <- 0.05
-e <- extent(-90, -20, -80, -40)
+res <- 0.1
+e <- extent(-90, -20, -80, -50)
 
 # Set period
 date_start <- as.Date("2019-02-20")
@@ -46,8 +46,8 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 #---------------------------------------------------------------
 
 # Import oceanmask
-#ocean <- readOGR("data/raw/ext/oceanmask","WestMed_area")
-#ocean <- spTransform(ocean, crs_proj)
+# ocean <- readOGR("data/raw/ext/oceanmask","WestMed_area")
+# ocean <- spTransform(ocean, crs_proj)
 
 
 
@@ -124,10 +124,10 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   
   # modify ice variables to add zero values
   stack_dynamic$SIC[is.na(stack_dynamic$SIC)] <- 0
-  stack_dynamic$SIC <- mask(stack_dynamic$SIC, bat)
+  stack_dynamic$SIC <- raster::mask(stack_dynamic$SIC, bat)
   
   stack_dynamic$SIT[is.na(stack_dynamic$SIT)] <- 0
-  stack_dynamic$SIT <- mask(stack_dynamic$SIT, bat)
+  stack_dynamic$SIT <- raster::mask(stack_dynamic$SIT, bat)
   
   # combine with static stack
   s <- stack(stack_static, stack_dynamic)

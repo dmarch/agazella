@@ -51,6 +51,10 @@ data <- cbind(data, enviro)
 # select
 data <- dplyr::select(data, sp_code, date, lon, lat, occ, all_of(all_vars))
 
+# remove grid cells with > 1 variable with missing data
+data$na_count <- rowSums(is.na(data))
+data <- data[data$na_count <= 1,]
+
 # export
 outfile <- paste0(outdir, "/", sp_code, "_observations.csv")
 write.csv(data, outfile, row.names = FALSE)
