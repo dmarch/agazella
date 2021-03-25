@@ -20,6 +20,7 @@ source("scr/fun_habitat_plot.R")
 
 ## Set initial parameters
 sp_code <- "GAZ"  # species code
+sp_name <- "A. gazella"
 stack_repo <- paste0(output_data, "/stack_daily")  # location of environmental data
 vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE")  # list of all predictors
 cores <- 50  # numbers of cores
@@ -35,8 +36,9 @@ source("analysis/habitat_model/scr/eda.R")
 
 # After visual inspection, keep and exclude variables
 # We remove SIT (keep SIC) and SAL (keep MLD)
-vars2remove <- c("SIT")  # we keep SIC
-                 #"SAL")  # we keep MLD
+vars2remove <- c("SIT",  # we keep SIC
+                 "SAL",  # we keep MLD
+                 "SDIST") # keep BAT
 
 vars <- vars[!vars %in% vars2remove]
 
@@ -61,6 +63,10 @@ source("analysis/habitat_model/scr/training_testing.R")
 
 # 3.1. Fit MaxEnt
 
+mod_code <- "me"
+source("analysis/habitat_model/scr/fit_me.R")
+
+
 # 3.2. Cross-validate
 
 
@@ -72,60 +78,29 @@ source("analysis/habitat_model/scr/training_testing.R")
 # 4. BRT
 #-----------------------------------------------------------
 
-
-
-fit_brt_v3
-
-
-
-
-
-
-
-
-
 # define model
 mod_code <- "brt"
-  
+
+
+
 # Fit model
-# Try using the computer server for BRT
-# export results by model (eg me, brt)
-source("analysis/habitat_model/scr/fit_brt_v2.R")
-
-mod_code <- "me"
-source("analysis/habitat_model/scr/fit_me.R")
+source("analysis/habitat_model/scr/fit_brt_v3.R")
 
 
-#### Predict
+# Predict
 # Set period
 date_start <- as.Date("2019-02-20")  # change to 2012 in final version
 date_end <- as.Date("2019-09-15")
+bootstrap <- F
 
-  # define species
-  sp_code <- "GAZ" 
-  sp_name <- "A. gazella"
-  
-  # define model
-  mod_code <- "brt"
   
   # define subfolder
   predict_folder <- "species"
 
   # Perdict model
   # export results by model (eg me, brt)
-  source("analysis/habitat_model/scr/predict_sdm.R")
-
-# Ensemble models
-
-
-# Boosted Regression Trees
-
-
-# Cross-validation
-# If independent data is available, use it
-# If not available, keep a testing dataset
-
-
+  source("analysis/habitat_model/scr/predict_brt.R")
+  source("analysis/habitat_model/scr/predict_brt_boot.R") # for bootstrap
 
 
 

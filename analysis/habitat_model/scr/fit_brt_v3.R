@@ -38,7 +38,7 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 ## Training
 
 # Import observations
-train_file <- paste0(indir, sp_code, "_train.csv")
+train_file <- paste0(indir, sp_code, "_data.csv")
 train <- read.csv(train_file)
 
 # Transform skewed variables
@@ -52,27 +52,12 @@ train$RN <- sample.int(100, size=nrow(train), replace=T, prob=NULL)
 ## Testing (same steps)
 
 # Import observations
-test_file <- paste0(indir, sp_code, "_test.csv")
-test <- read.csv(test_file)
-
-# Transform skewed variables
-test$EKE <- log1p(test$EKE)
-test$CHL <- log1p(test$CHL)
-
-# Generate Random Number
-test$RN <- sample.int(100, size=nrow(test), replace=T, prob=NULL)
-
-
-
-
-
-
-
-
-
-
-
-
+# test_file <- paste0(indir, sp_code, "_test.csv")
+# test <- read.csv(test_file)
+# 
+# # Transform skewed variables
+# test$EKE <- log1p(test$EKE)
+# test$CHL <- log1p(test$CHL)
 
 
 #-----------------------------------------------------------------
@@ -86,7 +71,7 @@ vars <- c(vars, "RN")
 
 # Define number of trees
 ini.nt = 50
-max.nt = 15000
+max.nt = 20000
 step.nt = 50
 tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 
@@ -101,13 +86,12 @@ registerDoParallel(cl)
 
 set.seed(131)
 all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar% {
-  #print(paste("Combination",i,"of",nrow(comb),sep=" "))
 
   # Fit model
   # Uses a default 10-fold cross-validation
   # faster learning rate means larger values
   mod <- tryCatch(
-                  gbm.step(data = sdata,             # data.frame with data
+                  gbm.step(data = train,             # data.frame with data
                   gbm.x = vars,          # predictor variables
                   gbm.y = "occ",            # response variable
                   family = "bernoulli",  # the nature of errror structure
@@ -148,20 +132,45 @@ all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar
 
 
 ## combine model outputs
-mod_out <- rbindlist(foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$mod_out)
-mod_out$id <- 1:nrow(mod_out)
+mod_list <- foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$mod_out
+mod_list[!lengths(mod_list)] <-  list(data.frame(tree.complexity = NA))
+mod_out <- rbindlist(mod_list, fill = TRUE)
+mod_out <- bind_cols(comb,
+               dplyr::select(mod_out, -c(tree.complexity, learning.rate, bag.fraction))) %>%
+            mutate(id = 1:n())
+
 
 ## combine deviance outputs
-cv_deviance <- rbindlist(foreach(i=1:nrow(comb)) %dopar% list(cv_deviance = all_list[[i]]$cv_deviance))
-cv_deviance$id <- rep(mod_out$id, each=length(tree.list))
-cv_deviance$ntrees <- rep(tree.list, nrow(mod_out))
+deviance_list <- list()
+for(i in 1:nrow(mod_out)){
+  # extract deviance data
+  dev <- all_list[[i]]$cv_deviance
+  
+  # check that there is no null data
+  if(is.null(dev)) dev <- rep(NA,length(tree.list))
+  
+  # make data.frame with number of trees
+  df <- data.frame(id = mod_out$id[i], lr = mod_out$lr[i], tc = mod_out$tc[i], bf = mod_out$bf[i], ntrees = tree.list, cv_deviance = dev)
+  deviance_list[[i]] <- df
+}
+cv_deviance <- rbindlist(deviance_list)
+
 
 ## get selected variables
 predict_list <- foreach(i=1:nrow(comb)) %dopar% all_list[[i]]$pred_list
 
-
 ## stop clusters
 stopCluster(cl)
+
+
+## plot profiles
+p <- ggplot(data = cv_deviance) +
+  geom_line(data = rename(cv_deviance, comb = id), aes(x = ntrees, y = cv_deviance, group = comb), color = "grey80") +
+  geom_line(aes(x = ntrees, y = cv_deviance, group = id), color = "firebrick3") +
+  facet_wrap(id ~.,) +
+  theme_article()
+outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.png")
+ggsave(outfile, p, width=25, height=14, units="cm", dpi=300)
 
 ## export outputs
 outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.csv")
@@ -170,30 +179,31 @@ write.csv(mod_out, outfile, row.names = FALSE)
 outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_cv_deviance.csv")
 write.csv(cv_deviance, outfile, row.names = FALSE)
 
+outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_predlist.rds")
+saveRDS(predict_list, outfile)
 
 #-----------------------------------------------------------------
 # Boosted Regression Tree - Fit full model
 #-----------------------------------------------------------------
 
+select_model_id <- 23
 
-mod_out$tree.complexity[8]
-pred_list <- vars[vars %in% all_list[[8]]$pred_list]
-plot(tree.list, all_list[[8]]$cv_deviance, type="l")
+tc <- mod_out$tc[select_model_id]
+lr <- mod_out$lr[select_model_id]
+bf <- mod_out$bf[select_model_id]
+ntrees <- mod_out$n.trees[select_model_id]
+pred_list <- vars[vars %in% all_list[[select_model_id]]$pred_list]
 
 # remove variables not selected
 # fir BRT with selected parameters
-mod_full <- gbm.fixed(data = sdata,             # data.frame with data
+mod_full <- gbm.fixed(data = train,             # data.frame with data
                 gbm.x = pred_list,          # predictor variables
                 gbm.y = "occ",            # response variable
                 family = "bernoulli",  # the nature of errror structure
-                tree.complexity = 5,   # tree complexity
-                learning.rate = 0.01,  # learning rate
-                bag.fraction = 0.5,    # bag fraction
-                n.trees = 7700) 
-
-
-# maximum tree limit reached - results may not be optimal 
-# - refit with faster learning rate or increase maximum number of trees
+                tree.complexity = tc,   # tree complexity
+                learning.rate = lr,  # learning rate
+                bag.fraction = bf,    # bag fraction
+                n.trees = ntrees) 
 
 # Save model
 saveRDS(mod_full, file = paste0(outdir, "/", sp_code, "_", mod_code, ".rds"))  # save model
@@ -209,25 +219,51 @@ dev.off()
 # Plot response curves
 pngfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_response.png")
 png(pngfile, width=1500, height=1000, res=200)
-gbm.plot(mod_full, n.plots=12)
+gbm.plot(mod_full)
 dev.off()
 
 
 #-----------------------------------------------------------------
 # Boosted Regression Tree - Interactions
 #-----------------------------------------------------------------
+# seems it is not working with fixed objects, try to gbm.step
 
 
 find.int <- gbm.interactions(mod_full)
-find.int$interactions
-find.int$rank.list
+# find.int$interactions
+# find.int$rank.list
+# 
+# gbm.perspec(mod_full, 5, 2)
+# gbm.perspec(mod_full, 5, 4)
+# gbm.perspec(mod_full, 6, 5)
 
-gbm.perspec(mod_full, 5, 2)
-gbm.perspec(mod_full, 5, 4)
-gbm.perspec(mod_full, 6, 5)
 
 #-----------------------------------------------------------------
-# Boosted Regression Tree - Predict
+# BRT - Predict on testing dataset
+#-----------------------------------------------------------------
+
+# predict
+preds <- predict.gbm(mod_full, test, n.trees=mod_full$gbm.call$best.trees, type="response")
+
+# calculate deviance
+calc.deviance(obs=test$occ, pred=preds, calc.mean=TRUE)
+
+d <- cbind(test$occ, preds)
+pres <- d[d[,1]==1, 2]
+abs <- d[d[,1]==0, 2]
+e <- evaluate(p=pres, a=abs)
+
+plot(e, 'ROC')
+plot(e, 'TPR')
+boxplot(e)
+density(e)
+
+
+
+
+
+#-----------------------------------------------------------------
+# Boosted Regression Tree - Predict (Bootstrap approach)
 #-----------------------------------------------------------------
 # For each habitat selection model (i.e., each life-history stage of each species), we fitted the model 50 times.
 # For each of the 50 iterations, we used the parameter values chosen for the final model, but we sampled
@@ -237,6 +273,17 @@ gbm.perspec(mod_full, 6, 5)
 # model fits to account for model stochasticity (Hazen et al. 2018) 
 #
 # preserve 1/0 and stratify across individuals
+#
+# https://besjournals.onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00172.x
+
+# import full dataset
+indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs/")
+obs_file <- paste0(indir, sp_code, "_observations.csv")
+data <- read.csv(obs_file)
+# Transform skewed variables
+data$EKE <- log1p(data$EKE)
+data$CHL <- log1p(data$CHL)
+
 
 # Set output directory
 # Each bootstrap model is stored here
@@ -264,7 +311,7 @@ registerDoParallel(cl)
 foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "splitstackshape", "stringr")) %dopar% {
 
   # subset data
-  idata <- stratified(sdata, c("occ", "id"), 0.5, replace = TRUE)
+  idata <- stratified(data, c("occ", "date"), 0.5, replace = TRUE)
   
   # fit BRT
   mod_boot <- gbm.fixed(data = idata,             # data.frame with data
@@ -290,5 +337,54 @@ stopCluster(cl)
 
 
 
-# 
+#-----------------------------------------------------------------
+# BRT - Predict on testing dataset
+#-----------------------------------------------------------------
+# for each in number of boots
+# import model
+# predict on testing dataset
+# store
+# then, we will average
+# use average for cross-validation
+# for spatial data, we should implement a similar approach of bootstrap: for each day, import habitat stack, then make n predictions, averange and calculate CI 
+
+
+boots_files <- list.files(outdir_bootstrap, full.names = T)
+
+
+
+## Prepare clusters
+cores <- length(boots_files)
+cl <- makeCluster(cores)
+registerDoParallel(cl)
+
+preds <- foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "stringr")) %dopar% {
+  
+  # import model
+  ibrt <- readRDS(boots_files[i])
+  
+  # predict
+  preds <- predict.gbm(ibrt, test, n.trees=ibrt$gbm.call$best.trees, type="response")
+  list(bpred = preds)
+}
+
+# average preds
+bpreds <- bind_cols(foreach(i=1:n.boot) %dopar% preds[[i]]$bpred)
+bpreds$mean <- rowMeans(bpreds)
+
+# calculate deviance
+calc.deviance(obs=test$occ, pred=bpreds$mean, calc.mean=TRUE)
+
+d <- cbind(test$occ, bpreds$mean)
+pres <- d[d[,1]==1, 2]
+abs <- d[d[,1]==0, 2]
+e <- evaluate(p=pres, a=abs)
+
+plot(e, 'ROC')
+plot(e, 'TPR')
+boxplot(e)
+density(e)
+
+## stop clusters
+stopCluster(cl)
 
