@@ -61,6 +61,7 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   
   # Average predictions
   pred <- mean(pred_stack)
+  pred <- calc(pred_stack, sd)
   
   # set/create folder
   product_folder <- paste(outdir, YYYY, MM, sep="/")  # Set folder

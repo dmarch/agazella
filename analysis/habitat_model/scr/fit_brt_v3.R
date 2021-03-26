@@ -4,10 +4,6 @@
 # create a grid of hyper-parameters (learning rate, depth, min obs in nodes, etc...)
 # and build a full model on each combination of parameters in parallel. 
 
-#source("scr/utilsGbm.R")
-#source("scr/utilsGeneral.R")
-
-
 # to make optimization faster: need to reduce amount of data. options here:
 # - select one location per day to reduce spatio-temporal autocorrelation
 # - reduce number of pseudo-absences: Simulate 20 tracks (Hazen et al. 2018, Reisinger et al. 2018)
@@ -35,11 +31,9 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 # have influence greater or less than random (Scales et al., 2017; Soykan, Eguchi, Kohin, & Dewar, 2014);
 # only variables with influence greater than the random number were included in the final models.
 
-## Training
-
-# Import observations
-train_file <- paste0(indir, sp_code, "_data.csv")
-train <- read.csv(train_file)
+## Data
+obs_file <- paste0(indir,"/", sp_code, "_data.csv")
+train <- read.csv(obs_file)
 
 # Transform skewed variables
 train$EKE <- log1p(train$EKE)
@@ -49,9 +43,23 @@ train$CHL <- log1p(train$CHL)
 train$RN <- sample.int(100, size=nrow(train), replace=T, prob=NULL)
 
 
-## Testing (same steps)
-
-# Import observations
+# ## Training
+# 
+# # Import observations
+# train_file <- paste0(indir, sp_code, "_train.csv")
+# train <- read.csv(train_file)
+# 
+# # Transform skewed variables
+# train$EKE <- log1p(train$EKE)
+# train$CHL <- log1p(train$CHL)
+# 
+# # Generate Random Number
+# train$RN <- sample.int(100, size=nrow(train), replace=T, prob=NULL)
+# 
+# 
+# ## Testing (same steps)
+# 
+# # Import observations
 # test_file <- paste0(indir, sp_code, "_test.csv")
 # test <- read.csv(test_file)
 # 
@@ -186,7 +194,7 @@ saveRDS(predict_list, outfile)
 # Boosted Regression Tree - Fit full model
 #-----------------------------------------------------------------
 
-select_model_id <- 23
+select_model_id <- 35
 
 tc <- mod_out$tc[select_model_id]
 lr <- mod_out$lr[select_model_id]
@@ -228,35 +236,38 @@ dev.off()
 #-----------------------------------------------------------------
 # seems it is not working with fixed objects, try to gbm.step
 
+# there is a bug to get interaction for gbm.fixed, unlike gbm.stem
+# changing the name of one variable fixes the problem
+names(mod_full$gbm.call)[1] <- "dataframe"
 
 find.int <- gbm.interactions(mod_full)
-# find.int$interactions
-# find.int$rank.list
-# 
-# gbm.perspec(mod_full, 5, 2)
-# gbm.perspec(mod_full, 5, 4)
-# gbm.perspec(mod_full, 6, 5)
+find.int$interactions
+find.int$rank.list
 
+gbm.perspec(mod_full, 11, 9)
+gbm.perspec(mod_full, 12, 9)
+gbm.perspec(mod_full, 12, 10)
+gbm.perspec(mod_full, 13, 3)
 
 #-----------------------------------------------------------------
 # BRT - Predict on testing dataset
 #-----------------------------------------------------------------
 
-# predict
-preds <- predict.gbm(mod_full, test, n.trees=mod_full$gbm.call$best.trees, type="response")
-
-# calculate deviance
-calc.deviance(obs=test$occ, pred=preds, calc.mean=TRUE)
-
-d <- cbind(test$occ, preds)
-pres <- d[d[,1]==1, 2]
-abs <- d[d[,1]==0, 2]
-e <- evaluate(p=pres, a=abs)
-
-plot(e, 'ROC')
-plot(e, 'TPR')
-boxplot(e)
-density(e)
+# # predict
+# preds <- predict.gbm(mod_full, test, n.trees=mod_full$gbm.call$best.trees, type="response")
+# 
+# # calculate deviance
+# calc.deviance(obs=test$occ, pred=preds, calc.mean=TRUE)
+# 
+# d <- cbind(test$occ, preds)
+# pres <- d[d[,1]==1, 2]
+# abs <- d[d[,1]==0, 2]
+# e <- evaluate(p=pres, a=abs)
+# 
+# plot(e, 'ROC')
+# plot(e, 'TPR')
+# boxplot(e)
+# density(e)
 
 
 
@@ -277,12 +288,12 @@ density(e)
 # https://besjournals.onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00172.x
 
 # import full dataset
-indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs/")
-obs_file <- paste0(indir, sp_code, "_observations.csv")
-data <- read.csv(obs_file)
+# indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs/")
+# obs_file <- paste0(indir, sp_code, "_observations.csv")
+# data <- read.csv(obs_file)
 # Transform skewed variables
-data$EKE <- log1p(data$EKE)
-data$CHL <- log1p(data$CHL)
+# data$EKE <- log1p(data$EKE)
+# data$CHL <- log1p(data$CHL)
 
 
 # Set output directory
@@ -296,12 +307,12 @@ n.boot <- 10  # number of model fits
 
 # Get hyper-parameters from full model
 # Keep CV parameters
-mod_full_out <- data.frame(
-  tree.complexity = mod_full$interaction.depth,
-  learning.rate = mod_full$shrinkage,
-  bag.fraction = mod_full$bag.fraction,
-  n.trees = mod_full$n.trees
-) 
+# mod_full_out <- data.frame(
+#   tree.complexity = mod_full$interaction.depth,
+#   learning.rate = mod_full$shrinkage,
+#   bag.fraction = mod_full$bag.fraction,
+#   n.trees = mod_full$n.trees
+# ) 
 
 ## Prepare clusters
 cores <- n.boot
@@ -310,18 +321,18 @@ registerDoParallel(cl)
 
 foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "splitstackshape", "stringr")) %dopar% {
 
-  # subset data
-  idata <- stratified(data, c("occ", "date"), 0.5, replace = TRUE)
+  # sampled half the data (with replacement) to fit the model (Hindell et al. 2020)
+  idata <- stratified(train, c("occ", "date"), 0.5, replace = TRUE)
   
   # fit BRT
   mod_boot <- gbm.fixed(data = idata,             # data.frame with data
                        gbm.x = pred_list,          # predictor variables
                        gbm.y = "occ",            # response variable
                        family = "bernoulli",  # the nature of errror structure
-                       tree.complexity = mod_full_out$tree.complexity,   # tree complexity
-                       learning.rate = mod_full_out$learning.rate,  # learning rate
-                       bag.fraction = mod_full_out$bag.fraction,    # bag fraction
-                       n.trees = mod_full_out$n.trees) 
+                       tree.complexity = tc,   # tree complexity
+                       learning.rate = lr,  # learning rate
+                       bag.fraction = bf,    # bag fraction
+                       n.trees = ntrees) 
   
   # store model
   outfile <- paste0(outdir_bootstrap, "/", str_pad(i, 2, pad = "0"), "_", sp_code, "_", mod_code, "_boot.rds")
@@ -330,10 +341,6 @@ foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "splitstackshape", "str
 
 ## stop clusters
 stopCluster(cl)
-
-
-
-# For predictions: load environmental stak for day (i). Predict for full model. Predict for each bootstrap - add into stack - summarize
 
 
 
@@ -349,42 +356,40 @@ stopCluster(cl)
 # for spatial data, we should implement a similar approach of bootstrap: for each day, import habitat stack, then make n predictions, averange and calculate CI 
 
 
-boots_files <- list.files(outdir_bootstrap, full.names = T)
-
-
-
-## Prepare clusters
-cores <- length(boots_files)
-cl <- makeCluster(cores)
-registerDoParallel(cl)
-
-preds <- foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "stringr")) %dopar% {
-  
-  # import model
-  ibrt <- readRDS(boots_files[i])
-  
-  # predict
-  preds <- predict.gbm(ibrt, test, n.trees=ibrt$gbm.call$best.trees, type="response")
-  list(bpred = preds)
-}
-
-# average preds
-bpreds <- bind_cols(foreach(i=1:n.boot) %dopar% preds[[i]]$bpred)
-bpreds$mean <- rowMeans(bpreds)
-
-# calculate deviance
-calc.deviance(obs=test$occ, pred=bpreds$mean, calc.mean=TRUE)
-
-d <- cbind(test$occ, bpreds$mean)
-pres <- d[d[,1]==1, 2]
-abs <- d[d[,1]==0, 2]
-e <- evaluate(p=pres, a=abs)
-
-plot(e, 'ROC')
-plot(e, 'TPR')
-boxplot(e)
-density(e)
-
-## stop clusters
-stopCluster(cl)
+# boots_files <- list.files(outdir_bootstrap, full.names = T)
+# 
+# ## Prepare clusters
+# cores <- length(boots_files)
+# cl <- makeCluster(cores)
+# registerDoParallel(cl)
+# 
+# preds <- foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "stringr")) %dopar% {
+#   
+#   # import model
+#   ibrt <- readRDS(boots_files[i])
+#   
+#   # predict
+#   preds <- predict.gbm(ibrt, test, n.trees=ibrt$gbm.call$best.trees, type="response")
+#   list(bpred = preds)
+# }
+# 
+# # average preds
+# bpreds <- bind_cols(foreach(i=1:n.boot) %dopar% preds[[i]]$bpred)
+# bpreds$mean <- rowMeans(bpreds)
+# 
+# # calculate deviance
+# calc.deviance(obs=test$occ, pred=bpreds$mean, calc.mean=TRUE)
+# 
+# d <- cbind(test$occ, bpreds$mean)
+# pres <- d[d[,1]==1, 2]
+# abs <- d[d[,1]==0, 2]
+# e <- evaluate(p=pres, a=abs)
+# 
+# plot(e, 'ROC')
+# plot(e, 'TPR')
+# boxplot(e)
+# density(e)
+# 
+# ## stop clusters
+# stopCluster(cl)
 
