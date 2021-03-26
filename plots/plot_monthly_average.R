@@ -8,9 +8,13 @@
 # plot map
 # raster facets: https://stackoverflow.com/questions/66389254/aligning-ggplot-faceted-raster-maps-with-a-single-map-separate-legends
 # animation: https://www.r-bloggers.com/2020/10/climate-animation-of-maximum-temperatures/
+# anima paths: https://hansenjohnson.org/post/animate-movement-in-r/
 
+source("setup.R")
+source("scr/fun_track_reading.R")  # read multiple tracking data formats
 
 mod_code <- "brt"
+sp_code <- "GAZ"
 
 #---------------------------------------------------------------
 # 1. Set data repository
@@ -20,13 +24,19 @@ outdir <- paste(output_data, "habitat-model", sp_code, mod_code, "animation", se
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
-### create map template in ggplot
 
+# import animal tracks
+ssm_dir<- paste0(output_data, "/tracking/", sp_code, "/L2_locations")
+ssm_files <- list.files(ssm_dir, full.names = T, pattern = "L2_locations.csv")
+ssm <- readTrack(ssm_files)
+
+### create map template in ggplot
 all_maps <- list.files(indir, recursive = T, full.names = T, pattern = ".tif")
 
 # landmask
 world <- ne_countries(scale = "medium", returnclass = "sf")
-box = c(xmin = extent(r)[1], ymin = extent(r)[3], xmax = extent(r)[2], ymax = extent(r)[4])
+e <- extent(-90, -20, -80, -50)
+box = c(xmin = e[1], ymin = e[3], xmax = e[2], ymax = e[4])
 land <- st_crop(world, box)
 
 # Prepare cluster
@@ -40,7 +50,7 @@ foreach(i=1:length(all_maps), .packages=c("tidyr", "lubridate", "raster", "strin
   date <- ymd(str_extract(file, pattern = '[[:digit:]]{8}'))
   
   # import raster
-  r <- raster(ifile)
+  r <- raster(file)
   rasdf <- as.data.frame(r,xy=TRUE)%>%drop_na()
   names(rasdf)[3] <- "layer"
 
@@ -49,6 +59,16 @@ foreach(i=1:length(all_maps), .packages=c("tidyr", "lubridate", "raster", "strin
     geom_raster(aes(x=x,y=y,fill=layer),data=rasdf)+
     geom_sf(fill=grey(0.8), size = 0.2, data=land)+
     scale_fill_viridis_c('Habitat suitability', limits=c(0,1))+
+    
+    
+    # lines and points
+    geom_path(data = df_all, 
+              aes(x=lon,y=lat,group=id,color=spd), 
+              alpha = 0.3)+
+    geom_point(data = df_all, 
+               aes(x=lon,y=lat,group=id,fill=spd),
+               alpha = 0.7, shape=21, size = 2)+
+    
     coord_sf(expand=c(0,0))+
     labs(x='Longitude',y='Latitude')+
     annotate(geom="label", x=-80, y=-77, label=date, fill="white", size = 5) +
@@ -73,5 +93,9 @@ foreach(i=1:length(all_maps), .packages=c("tidyr", "lubridate", "raster", "strin
 stopCluster(cl)
 
 
+library(gifski)
+
+files <- list.files(outdir, full.names = T, pattern = ".png")
+
 # animation
-gifski(files, "agazella_brt.gif", width = 800, height = 700, loop = FALSE, delay = 0.05)
+gifski(files, "agazella_brt.gif", width = 1800, height = 2000, loop = FALSE, delay = 0.5)
