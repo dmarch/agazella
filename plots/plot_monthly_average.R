@@ -46,28 +46,28 @@ registerDoParallel(cl)
 foreach(i=1:length(all_maps), .packages=c("tidyr", "lubridate", "raster", "stringr", "dplyr", "ggplot2", "egg")) %dopar% {
 
   # file info
-  file <- all_maps[i]
-  date <- ymd(str_extract(file, pattern = '[[:digit:]]{8}'))
+  ifile <- all_maps[i]
+  idate <- ymd(str_extract(file, pattern = '[[:digit:]]{8}'))
   
   # import raster
-  r <- raster(file)
+  r <- raster(ifile)
   rasdf <- as.data.frame(r,xy=TRUE)%>%drop_na()
   names(rasdf)[3] <- "layer"
 
   # plot
   p <- ggplot()+
-    geom_raster(aes(x=x,y=y,fill=layer),data=rasdf)+
+    #geom_raster(aes(x=x,y=y,fill=layer),data=rasdf)+
     geom_sf(fill=grey(0.8), size = 0.2, data=land)+
-    scale_fill_viridis_c('Habitat suitability', limits=c(0,1))+
+    #scale_fill_viridis_c('Habitat suitability', limits=c(0,1))+
     
     
     # lines and points
-    geom_path(data = df_all, 
-              aes(x=lon,y=lat,group=id,color=spd), 
-              alpha = 0.3)+
-    geom_point(data = df_all, 
-               aes(x=lon,y=lat,group=id,fill=spd),
-               alpha = 0.7, shape=21, size = 2)+
+    geom_path(data = dplyr::filter(ssm, date >= idate-10, date <= idate), 
+              aes(x=lon,y=lat,group=id),  color = "red",
+              alpha = 0.6)+
+    geom_point(data = dplyr::filter(ssm, date == idate), 
+               aes(x=lon,y=lat), color = "red",
+               alpha = 0.9, shape=21, size = 5)+
     
     coord_sf(expand=c(0,0))+
     labs(x='Longitude',y='Latitude')+
