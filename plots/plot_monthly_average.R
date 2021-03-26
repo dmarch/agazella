@@ -40,7 +40,7 @@ foreach(i=1:length(all_maps), .packages=c("tidyr", "lubridate", "raster", "strin
   date <- ymd(str_extract(file, pattern = '[[:digit:]]{8}'))
   
   # import raster
-  r <- raster(ifile)
+  r <- raster(file)
   rasdf <- as.data.frame(r,xy=TRUE)%>%drop_na()
   names(rasdf)[3] <- "layer"
 
