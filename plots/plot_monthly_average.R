@@ -26,7 +26,7 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
 # import animal tracks
-ssm_dir<- paste0(output_data, "/tracking/", sp_code, "/L2_locations")
+ssm_dir <- paste0(output_data, "/tracking/", sp_code, "/L2_locations")
 ssm_files <- list.files(ssm_dir, full.names = T, pattern = "L2_locations.csv")
 ssm <- readTrack(ssm_files)
 
@@ -47,7 +47,7 @@ foreach(i=1:length(all_maps), .packages=c("tidyr", "lubridate", "raster", "strin
 
   # file info
   ifile <- all_maps[i]
-  idate <- ymd(str_extract(file, pattern = '[[:digit:]]{8}'))
+  idate <- ymd(str_extract(ifile, pattern = '[[:digit:]]{8}'))
   
   # import raster
   r <- raster(ifile)
@@ -56,22 +56,19 @@ foreach(i=1:length(all_maps), .packages=c("tidyr", "lubridate", "raster", "strin
 
   # plot
   p <- ggplot()+
-    #geom_raster(aes(x=x,y=y,fill=layer),data=rasdf)+
+    geom_raster(aes(x=x,y=y,fill=layer),data=rasdf)+
     geom_sf(fill=grey(0.8), size = 0.2, data=land)+
-    #scale_fill_viridis_c('Habitat suitability', limits=c(0,1))+
-    
-    
+    scale_fill_viridis_c('Habitat suitability', limits=c(0,1))+
     # lines and points
     geom_path(data = dplyr::filter(ssm, date >= idate-10, date <= idate), 
-              aes(x=lon,y=lat,group=id),  color = "red",
+              aes(x=lon,y=lat,group=id),  colour = "red",
               alpha = 0.6)+
     geom_point(data = dplyr::filter(ssm, date == idate), 
-               aes(x=lon,y=lat), color = "red",
-               alpha = 0.9, shape=21, size = 5)+
-    
+               aes(x=lon,y=lat,group=id), colour = "red",
+               alpha = 0.9, shape=19, size = 2)+
     coord_sf(expand=c(0,0))+
     labs(x='Longitude',y='Latitude')+
-    annotate(geom="label", x=-80, y=-77, label=date, fill="white", size = 5) +
+    annotate(geom="label", x=-80, y=-77, label=idate, fill="white", size = 5) +
     theme_article(base_size=16) +
     theme(legend.position = "bottom",
           legend.direction = "horizontal",
@@ -86,7 +83,7 @@ foreach(i=1:length(all_maps), .packages=c("tidyr", "lubridate", "raster", "strin
   
   
   # Export plot
-  p_png = paste0(outdir, "/", sprintf("%s_brt.png", format(date, "%Y%m%d")))
+  p_png = paste0(outdir, "/", sprintf("%s_brt.png", format(idate, "%Y%m%d")))
   ggsave(p_png, p, width=18, height=20, units="cm", dpi=300)
 }
 
