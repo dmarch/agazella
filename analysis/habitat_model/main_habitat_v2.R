@@ -12,6 +12,8 @@
 # 6. Predictions, with bootstraps
 
 
+# https://github.com/karthik/rdrop2#accessing-dropbox-on-shiny-and-remote-servers
+
 
 ## Load dependencies
 source("setup.R")
