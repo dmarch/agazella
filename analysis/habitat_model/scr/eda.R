@@ -7,7 +7,7 @@
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs/")
+indir <- paste0(output_data, "/habitat-model/", sp_code)
 outdir <- paste0(output_data, "/habitat-model/", sp_code)
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
@@ -16,7 +16,7 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 # Import observations
 #-----------------------------------------------------------------
 
-obs_file <- paste0(indir, sp_code, "_observations.csv")
+obs_file <- paste0(indir,"/", sp_code, "_data.csv")
 data <- read.csv(obs_file)
 
 
