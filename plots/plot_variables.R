@@ -38,8 +38,11 @@ land <- st_crop(world, box)
 # 3. Plot
 #---------------------------------------------------------------
 
+# import stack
 s <- stack(stack_files$file[85])  #15 May
 
+# transform distance to ice
+s$EDGE[s$EDGE < 0] <- 0
 
 # import raster
 rasdf <- as.data.frame(s, xy=TRUE) %>% drop_na()
@@ -50,9 +53,7 @@ rasdf_m <- rasdf_m %>% filter(variable %in% vars)
 
 # plot
 # trick part here is that we need individual scales
-# we need to separete ggplot objects and then combine
-
-
+# we need to separete ggplot objects and then combine in power point
 for(i in vars){
   
   p <- ggplot()+
@@ -78,5 +79,3 @@ for(i in vars){
   ggsave(p_png, p, width=15, height=15, units="cm", dpi=300)
   
 }
-
-
