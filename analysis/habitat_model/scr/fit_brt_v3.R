@@ -194,13 +194,16 @@ saveRDS(predict_list, outfile)
 # Boosted Regression Tree - Fit full model
 #-----------------------------------------------------------------
 
+mod_out <- read.csv(paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.csv"))
+predict_list <- readRDS(paste0(outdir, "/", sp_code, "_", mod_code, "_predlist.rds"))
+
 select_model_id <- 35
 
 tc <- mod_out$tc[select_model_id]
 lr <- mod_out$lr[select_model_id]
 bf <- mod_out$bf[select_model_id]
 ntrees <- mod_out$n.trees[select_model_id]
-pred_list <- vars[vars %in% all_list[[select_model_id]]$pred_list]
+pred_list <- vars[vars %in% predict_list[[select_model_id]]]
 
 # remove variables not selected
 # fir BRT with selected parameters
@@ -215,6 +218,7 @@ mod_full <- gbm.fixed(data = train,             # data.frame with data
 
 # Save model
 saveRDS(mod_full, file = paste0(outdir, "/", sp_code, "_", mod_code, ".rds"))  # save model
+mod_full <- readRDS(paste0(outdir, "/", sp_code, "_", mod_code, ".rds"))
 
 # Plot variable contribution using radar plot
 var_imp <- summary(mod_full)$rel.inf
@@ -227,7 +231,7 @@ dev.off()
 # Plot response curves
 pngfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_response.png")
 png(pngfile, width=1500, height=1000, res=200)
-gbm.plot(mod_full)
+gbm.plot(mod_full, smooth=TRUE, n.plots=6, rug=FALSE, common.scale=TRUE, plot.layout=c(2, 3))
 dev.off()
 
 
@@ -303,7 +307,7 @@ if (!dir.exists(outdir_bootstrap)) dir.create(outdir_bootstrap, recursive = TRUE
 
 
 # Define number of bootstrap models
-n.boot <- 10  # number of model fits
+n.boot <- 50  # number of model fits
 
 # Get hyper-parameters from full model
 # Keep CV parameters

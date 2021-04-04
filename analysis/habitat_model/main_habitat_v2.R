@@ -91,6 +91,12 @@ source("analysis/habitat_model/scr/fit_brt_v3.R")
 
 # Predict
 # Set period
+date_start <- as.Date("2019-02-01")  # change to 2012 in final version
+date_end <- as.Date("2019-02-19")
+
+date_start <- as.Date("2019-09-16")  # change to 2012 in final version
+date_end <- as.Date("2019-09-30")
+
 date_start <- as.Date("2019-02-20")  # change to 2012 in final version
 date_end <- as.Date("2019-09-15")
 bootstrap <- F
