@@ -15,7 +15,7 @@ pacman::p_load("data.table", "tidyr", "dplyr", "lubridate", "openxlsx", "stringr
                "foreach", "doParallel",  # parallel computing
                "move", "moveVis", "SDLfilter", "adehabitatHR", "foieGras", "argosfilter",  # movement
                "availability", # https://github.com/AustralianAntarcticDataCentre/availability
-               "corrplot", "dismo", "gbm", "randomForest", "Hmisc", # habitat model
+               "corrplot", "dismo", "gbm", "randomForest", "Hmisc", "ggBRT", # habitat model
                "rJava", "fmsb",  # miscellaneous
                "rnaturalearthdata", "rnaturalearth",  # spatial data
                "raster", "sf", "ncdf4", "rgeos",  # spatial

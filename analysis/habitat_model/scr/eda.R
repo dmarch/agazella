@@ -26,7 +26,7 @@ data <- read.csv(obs_file)
 
 ## Select observed data
 df <- data %>% 
-  #☼dplyr::filter(occ == 1) %>%
+  #dplyr::filter(occ == 1) %>%
   dplyr::select(vars)
 
 ## Plot missing data per variable
