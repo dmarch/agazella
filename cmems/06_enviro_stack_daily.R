@@ -26,8 +26,8 @@ res <- 0.1
 e <- extent(-90, -20, -80, -50)
 
 # Set period
-date_start <- as.Date("2019-02-20")
-date_end <- as.Date("2019-09-15")
+date_start <- as.Date("2019-02-01")
+date_end <- as.Date("2019-09-30")
 
 # dynamic variables to extract. same names as catalog
 env_dyn_vars <- c("SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE") 
