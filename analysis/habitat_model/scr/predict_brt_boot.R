@@ -4,7 +4,6 @@
 
 mod_code <- "brt"
 cores <- 20
-date_start <- as.Date("2019-04-11")  # change to 2012 in final version
 
 
 #---------------------------------------------------------------
@@ -16,7 +15,7 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 ## Import landmask
 world <- ne_countries(scale = "medium", returnclass = "sp")
-land <- crop(world, extent(-90, -20, -80, -50))
+land <- raster::crop(world, raster::extent(-90, -20, -80, -50))
 
 # list of bootstrap models
 outdir_bootstrap <- paste0(indir, "/bootstrap/")
@@ -44,12 +43,13 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   grdfile <- list.files(stack_repo, recursive = TRUE, full.names = TRUE, pattern = pat)
   
   # Import environmental stack
-  s <- stack(grdfile)
+  s <- raster::stack(grdfile)
   s <- s+0
   
   # Transform variables
   s$CHL <- log1p(s$CHL)
   s$EKE <- log1p(s$EKE)
+  s$EDGE[s$EDGE < 0] <- 0
   
   # Model prediction
   stack_list <- list()
@@ -61,11 +61,11 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   }
   
   # create stack from list
-  pred_stack <- stack(stack_list)
+  pred_stack <- raster::stack(stack_list)
   
   # Average predictions
-  pred <- mean(pred_stack)
-  pred_sd <- calc(pred_stack, sd)
+  pred <- raster::mean(pred_stack)
+  pred_sd <- raster::calc(pred_stack, sd)
   
   # set/create folder
   product_folder <- paste(outdir, YYYY, MM, sep="/")  # Set folder
@@ -91,7 +91,7 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   # export plot
   pngfile <- paste0(product_folder, "/", format(date, "%Y%m%d"),"_", sp_code, "_", mod_code, "_pred_sd.png")
   png(pngfile, width=560, height=600, res=100)
-  plot(pred_sd, main = paste(sp_name, "   Model:", mod_code, "\n", date), zlim=c(0,1), col = viridis(100))
+  plot(pred_sd, main = paste(sp_name, "   Model:", mod_code, "\n", date), col = viridis(100))
   plot(land, col="grey80", border="grey60", add=TRUE)
   text(x = -3.5, y = 44, labels = date)
   box()

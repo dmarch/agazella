@@ -15,11 +15,13 @@ source("scr/fun_track_reading.R")  # read multiple tracking data formats
 
 mod_code <- "brt"
 sp_code <- "GAZ"
+boot <- T
 
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-indir <- paste(output_data, "habitat-model", sp_code, mod_code, "predict", sep="/")
+if(boot == F) indir <- paste(output_data, "habitat-model", sp_code, mod_code, "predict", sep="/")
+if(boot == T) indir <- paste(output_data, "habitat-model", sp_code, mod_code, "predict_boost", sep="/")
 outdir <- paste(output_data, "habitat-model", sp_code, mod_code, "monthly-plots", sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
@@ -31,7 +33,7 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 # list all files per month
 predict_files <- tibble(
-  file = list.files(indir, pattern = '.tif', recursive = T, full.names = T),
+  file = list.files(indir, pattern = 'pred.tif', recursive = T, full.names = T),
   date = ymd(str_extract(file, pattern = '[[:digit:]]{4}[[:digit:]]{2}[[:digit:]]{2}')),
   month = month(date))
 
@@ -97,6 +99,47 @@ p <- ggplot()+
                                ticks = TRUE))
 
 # Export plot
-p_png <- paste0(outdir, "/monthly_average.png")
+if(boot == F) p_png <- paste0(outdir, "/monthly_average.png")
+if(boot == T) p_png <- paste0(outdir, "/monthly_average_boot.png")
 ggsave(p_png, p, width=30, height=20, units="cm", dpi=300)
+
+
+
+#### Calculate monthly sea ice edge
+# Monthly sea ice area is derived from the monthly mean of sea ice cover
+
+# list all stackfiles per month
+enviro_files <- tibble(
+  file = list.files(stack_repo, pattern = '_enviro.grd', recursive = T, full.names = T),
+  date = ymd(str_extract(file, pattern = '[[:digit:]]{4}[[:digit:]]{2}[[:digit:]]{2}')),
+  month = month(date))
+
+
+
+m <- unique(enviro_files$month)
+
+mavg_all <- stack()
+
+for(i in m){
+  
+  # select files to import
+  files <- enviro_files %>% filter(month == i)
+  
+  # read all SIC rasters (band = 11)
+  s <- stack()
+  for(j in files$file){
+    r <- raster(j, band = 11)
+    s <- stack(s, r)
+  }
+  
+  # average
+  mavg <- mean(s, na.rm=TRUE)
+  mavg_all <- stack(mavg_all, mavg)
+}
+
+# names layers
+names(mavg_all) <- month.abb[m]
+
+# Calculate edge
+cnt <- rasterToContour(mavg_all$Feb, levels = 0.15)
 

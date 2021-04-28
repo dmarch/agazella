@@ -36,6 +36,8 @@ p <- plot_Missing(df)
 print(p)
 dev.off()
 
+## Calculate proportion of missing data
+purrr::map(df, ~mean(is.na(.))*100) 
 
 #-----------------------------------------------------------------
 # Explore the correlation between variables in observed data
