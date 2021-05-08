@@ -13,7 +13,7 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 ## Import landmask
 world <- ne_countries(scale = "medium", returnclass = "sp")
-land <- crop(world, extent(-90, -20, -80, -50))
+land <- raster::crop(world, raster::extent(-90, -20, -80, -50))
 
 # import model
 mod <- readRDS(paste0(indir, "/", sp_code, "_", mod_code, ".rds"))
@@ -38,14 +38,15 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   grdfile <- list.files(stack_repo, recursive = TRUE, full.names = TRUE, pattern = pat)
   
   # Import environmental stack
-  s <- stack(grdfile)
+  s <- raster::stack(grdfile)
   s <- s+0
   
   # Transform variables
   s$CHL <- log1p(s$CHL)
   s$EKE <- log1p(s$EKE)
-  
-  # Model prediction
+  s$EDGE[s$EDGE < 0] <- 0
+ 
+   # Model prediction
   pred <- raster::predict(model = mod, object = s, n.trees=mod$gbm.call$best.trees, type="response")
 
   # set/create folder

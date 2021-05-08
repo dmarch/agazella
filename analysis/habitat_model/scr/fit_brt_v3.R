@@ -39,6 +39,9 @@ train <- read.csv(obs_file)
 train$EKE <- log1p(train$EKE)
 train$CHL <- log1p(train$CHL)
 
+# Transform ice edge distance (change negative values to zero)
+train$EDGE[train$EDGE < 0] <- 0
+
 # Generate Random Number
 train$RN <- sample.int(100, size=nrow(train), replace=T, prob=NULL)
 
@@ -120,7 +123,9 @@ all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar
       AUC = mod$self.statistics$discrimination,
       cv.AUC = mod$cv.statistics$discrimination.mean,
       deviance = mod$self.statistics$mean.resid,
-      cv.deviance = mod$cv.statistics$deviance.mean
+      cv.deviance = mod$cv.statistics$deviance.mean,
+      PER = (1-mod$self.statistics$mean.resid/mod$self.statistics$mean.null)*100,
+      cv.PER = (1-mod$cv.statistics$deviance.mean/mod$self.statistics$mean.null)*100
     ) 
     
     # keep deviance values for all trees
@@ -145,7 +150,7 @@ mod_list[!lengths(mod_list)] <-  list(data.frame(tree.complexity = NA))
 mod_out <- rbindlist(mod_list, fill = TRUE)
 mod_out <- bind_cols(comb,
                dplyr::select(mod_out, -c(tree.complexity, learning.rate, bag.fraction))) %>%
-            mutate(id = 1:n())
+            dplyr::mutate(id = 1:n())
 
 
 ## combine deviance outputs
@@ -173,7 +178,7 @@ stopCluster(cl)
 
 ## plot profiles
 p <- ggplot(data = cv_deviance) +
-  geom_line(data = rename(cv_deviance, comb = id), aes(x = ntrees, y = cv_deviance, group = comb), color = "grey80") +
+  geom_line(data = dplyr::rename(cv_deviance, comb = id), aes(x = ntrees, y = cv_deviance, group = comb), color = "grey80") +
   geom_line(aes(x = ntrees, y = cv_deviance, group = id), color = "firebrick3") +
   facet_wrap(id ~.,) +
   theme_article()
@@ -194,17 +199,20 @@ saveRDS(predict_list, outfile)
 # Boosted Regression Tree - Fit full model
 #-----------------------------------------------------------------
 
-select_model_id <- 35
+mod_out <- read.csv(paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.csv"))
+predict_list <- readRDS(paste0(outdir, "/", sp_code, "_", mod_code, "_predlist.rds"))
+
+select_model_id <- 36
 
 tc <- mod_out$tc[select_model_id]
 lr <- mod_out$lr[select_model_id]
 bf <- mod_out$bf[select_model_id]
 ntrees <- mod_out$n.trees[select_model_id]
-pred_list <- vars[vars %in% all_list[[select_model_id]]$pred_list]
+pred_list <- vars[vars %in% predict_list[[select_model_id]]]
 
 # remove variables not selected
 # fir BRT with selected parameters
-mod_full <- gbm.fixed(data = train,             # data.frame with data
+mod_full <- dismo::gbm.fixed(data = train,             # data.frame with data
                 gbm.x = pred_list,          # predictor variables
                 gbm.y = "occ",            # response variable
                 family = "bernoulli",  # the nature of errror structure
@@ -215,6 +223,7 @@ mod_full <- gbm.fixed(data = train,             # data.frame with data
 
 # Save model
 saveRDS(mod_full, file = paste0(outdir, "/", sp_code, "_", mod_code, ".rds"))  # save model
+mod_full <- readRDS(paste0(outdir, "/", sp_code, "_", mod_code, ".rds"))
 
 # Plot variable contribution using radar plot
 var_imp <- summary(mod_full)$rel.inf
@@ -224,10 +233,18 @@ png(pngfile, width=1000, height=1000, res=150)
 radarPlot(var_imp, var_order=pred_list)
 dev.off()
 
+# Plot variable contribution using bar plot
+pngfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_var_influence.png")
+png(pngfile, width=1000, height=1000, res=150)
+ggBRT::ggInfluence(mod_full, show.signif = F, col.bar = "skyblue3")
+dev.off()
+
 # Plot response curves
 pngfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_response.png")
-png(pngfile, width=1500, height=1000, res=200)
-gbm.plot(mod_full)
+png(pngfile, width=1500, height=1500, res=200)
+#dismo::gbm.plot(mod_full, smooth=TRUE, n.plots=6, rug=FALSE, common.scale=TRUE, plot.layout=c(2, 3))
+names(mod_full$gbm.call)[1] <- "dataframe"
+ggBRT::ggPD(mod_full, n.plots =6, smooth = F, rug = F, ncol=2, col.line = "skyblue3")
 dev.off()
 
 
@@ -240,11 +257,11 @@ dev.off()
 # changing the name of one variable fixes the problem
 names(mod_full$gbm.call)[1] <- "dataframe"
 
-find.int <- gbm.interactions(mod_full)
+find.int <- dismo::gbm.interactions(mod_full)
 find.int$interactions
 find.int$rank.list
 
-gbm.perspec(mod_full, 11, 9)
+dismo::gbm.perspec(mod_full, 11, 9)
 gbm.perspec(mod_full, 12, 9)
 gbm.perspec(mod_full, 12, 10)
 gbm.perspec(mod_full, 13, 3)
@@ -303,7 +320,7 @@ if (!dir.exists(outdir_bootstrap)) dir.create(outdir_bootstrap, recursive = TRUE
 
 
 # Define number of bootstrap models
-n.boot <- 10  # number of model fits
+n.boot <- 50  # number of model fits
 
 # Get hyper-parameters from full model
 # Keep CV parameters
@@ -315,7 +332,7 @@ n.boot <- 10  # number of model fits
 # ) 
 
 ## Prepare clusters
-cores <- n.boot
+cores <- 50
 cl <- makeCluster(cores)
 registerDoParallel(cl)
 
@@ -325,7 +342,7 @@ foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "splitstackshape", "str
   idata <- stratified(train, c("occ", "date"), 0.5, replace = TRUE)
   
   # fit BRT
-  mod_boot <- gbm.fixed(data = idata,             # data.frame with data
+  mod_boot <- dismo::gbm.fixed(data = idata,             # data.frame with data
                        gbm.x = pred_list,          # predictor variables
                        gbm.y = "occ",            # response variable
                        family = "bernoulli",  # the nature of errror structure

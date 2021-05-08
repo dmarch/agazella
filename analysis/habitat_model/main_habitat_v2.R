@@ -12,6 +12,8 @@
 # 6. Predictions, with bootstraps
 
 
+# https://github.com/karthik/rdrop2#accessing-dropbox-on-shiny-and-remote-servers
+
 
 ## Load dependencies
 source("setup.R")
@@ -69,8 +71,8 @@ source("analysis/habitat_model/scr/eda.R")
 
 # 3.1. Fit MaxEnt
 
-mod_code <- "me"
-source("analysis/habitat_model/scr/fit_me.R")
+#mod_code <- "me"
+#source("analysis/habitat_model/scr/fit_me.R")
 
 
 # 3.2. Cross-validate
@@ -91,13 +93,14 @@ source("analysis/habitat_model/scr/fit_brt_v3.R")
 
 # Predict
 # Set period
-date_start <- as.Date("2019-02-20")  # change to 2012 in final version
-date_end <- as.Date("2019-09-15")
+date_start <- as.Date("2019-02-01")  # change to 2012 in final version
+date_end <- as.Date("2019-09-30")
+
 bootstrap <- F
 
   
   # define subfolder
-  predict_folder <- "species"
+  #predict_folder <- "species"
 
   # Perdict model
   # export results by model (eg me, brt)
