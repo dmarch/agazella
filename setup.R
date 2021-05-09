@@ -11,7 +11,7 @@ options(java.parameters = "-Xmx4g" )
 
 # Load required packages
 pacman::p_load("data.table", "tidyr", "dplyr", "lubridate", "readxl", "stringr", "reshape2", "splitstackshape", # data manipulation
-               "ggplot2", "egg", "pals", "viridis", "gridExtra", "grid", "scales", "ggprism",  # plots
+               "ggplot2", "egg", "pals", "viridis", "gridExtra", "grid", "scales", "ggprism", "ggimage", "RColorBrewer", # plots
                "foreach", "doParallel",  # parallel computing
                "move", "moveVis", "SDLfilter", "adehabitatHR", "foieGras", "argosfilter",  # movement
                "availability", # https://github.com/AustralianAntarcticDataCentre/availability
