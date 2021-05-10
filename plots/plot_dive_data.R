@@ -55,7 +55,9 @@ p <- ggplot(data = data) +
   theme(
     legend.position = "none",
     panel.grid.major.y = element_line( size=.1, color="grey50"),
-    strip.text.y.right = element_blank()
+    strip.text.y.right = element_blank(),
+    axis.title.x = element_text(margin = ggplot2::margin(t = 20, r = 0, b = 0, l = 0)),
+    axis.title.y = element_text(margin = ggplot2::margin(t = 0, r = 20, b = 0, l = 0))
   )
 
 # export plot
