@@ -3,6 +3,7 @@
 
 source("setup.R")
 
+
 # set output directory
 outdir <- paste(output_data, "fig", sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
@@ -14,9 +15,10 @@ data <- read_excel(xls)
 # prepare data
 data <- data %>%
   # extract hour of the day from Excel dates
-  mutate(Departure = hour(inicio),
-         Arrival = hour(final),
-         date = as.Date(UTC_Date)) %>%
+  mutate(
+    date = as.Date(UTC_Date),
+    Departure = hour(inicio),
+         Arrival = hour(final)) %>%
   # select variables
   dplyr::select(Tag_ID, date, Departure, Arrival)
 
@@ -26,6 +28,10 @@ data <- data %>%
 # transform from wide to long format
 data_long <- melt(data, id.vars=c("Tag_ID", "date"))
 
+# prepare data
+data_long <- data_long %>%
+  dplyr::filter(!is.na(value)) %>%
+  mutate(time = paste(date, value) %>% parse_date_time("Ymd H"))
 
 
 p <- ggplot(data = data_long) +
@@ -62,12 +68,36 @@ ggsave(p_png, p, width=14, height=12, units="cm", dpi=300)
 
 ## plot per date
 
-p <- ggplot(data = data_long) +
+
+all_days <- seq.POSIXt(from = min(data_long$time), to = max(data_long$time), by = "days")
+crds <- matrix(c(-60, -65), nrow=1)
+
+sunrise <- sunriset(crds, all_days, direction=c("sunrise"), POSIXct.out=TRUE)
+sunset <- sunriset(crds, all_days, direction=c("sunset"), POSIXct.out=TRUE)
+
+ephemeris <- getSunlightTimes(date = as.Date(all_days), lat = -65, lon = -60)
+ephemeris$sunrise2 <- as.numeric(format(ephemeris$sunrise, "%H%M"))
+ephemeris$sunset2 = as.numeric(format(ephemeris$sunset, "%H%M"))
+
+
+data_long$time2 <- as.numeric(format(data_long$time, "%H%M"))
+
+# for graph #1 y-axis
+time_format <- function(hrmn) substr(sprintf("%04d", hrmn),1,2)
+
+
+p <- ggplot(data = data_long, aes(x = date)) +
+  geom_ribbon(data = ephemeris,
+              aes(x = date, ymin=sunrise2, ymax=sunset2),
+              fill="#ffeda0") +
+
   # histogram
-  geom_point(aes(x = date, y = value, colour=variable)) +
-  scale_y_continuous(limits=c(0,23),
-    breaks = seq(0, 23, by = 2),
-                     expand = c(0.02,0)) +
+  geom_point(aes(y = time2, colour=variable)) +
+  scale_y_continuous(labels=time_format, limits=c(0,2400), breaks=seq(0, 2400, 200), expand=c(0,0))
+
+  # scale_y_continuous(limits=c(0,23),
+  #   breaks = seq(0, 23, by = 2),
+  #                    expand = c(0.02,0)) +
   # theme settings
   theme_article(base_size=14) +
   theme(legend.position = "none")

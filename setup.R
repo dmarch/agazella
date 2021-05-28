@@ -18,7 +18,7 @@ pacman::p_load("data.table", "tidyr", "dplyr", "lubridate", "readxl", "stringr",
                "corrplot", "dismo", "gbm", "randomForest", "Hmisc", "ggBRT", # habitat model
                "rJava", "fmsb",  # miscellaneous
                "rnaturalearthdata", "rnaturalearth",  # spatial data
-               "raster", "sf", "ncdf4", "rgeos",  # spatial
+               "raster", "sf", "ncdf4", "rgeos","maptools",  # spatial
                "rdrop2")  # dropbox data
 
 # Set project projections
