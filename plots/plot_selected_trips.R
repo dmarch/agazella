@@ -13,7 +13,7 @@ library(scico)
 sp_code <- "GAZ"
 
 # set output directory
-outdir <- paste(output_data, "fig", sep="/")
+outdir <- paste(output_data, "fig/selected_trips/", sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 # import list of selected trips
@@ -47,11 +47,11 @@ for(i in 1:nrow(trips)){
   trip_list[[i]] <- ssm_sel
 }
 
-ssm <- rbindlist(trip_list)
+trip_data <- rbindlist(trip_list)
 
 
 # add month
-ssm$month <- month(ssm$date) %>% as.factor()
+#ssm$month <- month(ssm$date) %>% as.factor()
 
 # import bathymetry
 bat <- raster(paste0(output_data, "/stack_daily/2019/02/20190201_enviro.grd"))
@@ -76,69 +76,96 @@ land <- st_crop(world, box)
 # 2. Plot
 #---------------------------------------------------------------
 
-labels <- ssm %>%
-  distinct(id) %>%
-  mutate(label = paste0("#", id))
-
-# define xy limits
-xl <- range(ssm$lon)
-yl <- range(ssm$lat)
-
-# legend breaks
-min_month <- floor_date(min(ssm$date), unit="month")
-max_month <- ceiling_date(max(ssm$date), unit="month")
-breaks <- seq.POSIXt(from = min_month, to = max_month, by="month")
+# labels <- ssm %>%
+#   distinct(id) %>%
+#   mutate(label = paste0("#", id))
 
 
+trips <- unique(trip_data$tripID)
 
-# plot
-p <- ggplot()+
-  # plot hillshade
-  geom_raster(aes(x=x, y=y, alpha=layer),data=hilldf)+
-  scale_alpha(range =  c(0, 1), guide = "none") +
-  # plot bathymetry
-  geom_raster(aes(x=x,y=y,fill=BAT), alpha=0.8, data=batdf)+
-  scale_fill_gradient(low=brewer.pal(9,"Blues")[5], high=brewer.pal(9,"Blues")[1],
-                      name = "Depth (m)",
-                      guide = guide_colourbar(title.position = "top", title.hjust = 0.5,
-                                              frame.colour="black", frame.linewidth=1, frame.linetype=1,
-                                              ticks.colour = "black", ticks = TRUE)) +
-  # lines and points
+for(i in 1:length(trips)){
+  
+  ssm <- filter(trip_data, tripID == trips[i])
+  
+  
+  labels <-ssm %>%
+    distinct(id) %>%
+    mutate(label = paste0("#", id))
+  
+  # define xy limits
+  xl <- range(ssm$lon)+c(-1,1)
+  yl <- range(ssm$lat)+c(-1,1)
+  
+  
+  ### define lon/lat bounds
+  # range from data
+  xl <- range(ssm$lon)
+  yl <- range(ssm$lat)
+  # get centroid
+  zoom_to <- c(mean(xl), mean(yl))  # center of the range
+  # define zoom level
+  lon_span <- xl[2]-xl[1]
+  lat_span <- yl[2]-yl[1]
+  zoom_lon <- floor(log2(360/lon_span))
+  zoom_lat <- floor(log2(180/lat_span))
+  zoom_level <- min(zoom_lon, zoom_lat) -1
+  # define span
+  lon_span <- 360 / 2^zoom_level
+  lat_span <- 180 / 2^zoom_level
+  # define boundaries
+  lon_bounds <- c(zoom_to[1] - lon_span / 2, zoom_to[1] + lon_span / 2)
+  lat_bounds <- c(zoom_to[2] - lat_span / 2, zoom_to[2] + lat_span / 2)
+  
+  
+  # legend breaks
+  # min_month <- floor_date(min(ssm$date), unit="month")
+  # max_month <- ceiling_date(max(ssm$date), unit="month")
+  # breaks <- seq.POSIXt(from = min_month, to = max_month, by="month")
+  
+  
+  
+  # plot
+  p <- ggplot()+
+    # # plot hillshade
+    # geom_tile(aes(x=x, y=y, alpha=layer),data=hilldf)+
+    # scale_alpha(range =  c(0, 1), guide = "none") +
+    # # plot bathymetry
+    # geom_tile(aes(x=x,y=y,fill=BAT), alpha=0.8, data=batdf)+
+    # scale_fill_gradient(low=brewer.pal(9,"Blues")[5], high=brewer.pal(9,"Blues")[1],
+    #                     name = "Depth (m)",
+    #                     guide = guide_colourbar(title.position = "top", title.hjust = 0.5,
+    #                                             frame.colour="black", frame.linewidth=1, frame.linetype=1,
+    #                                             ticks.colour = "black", ticks = TRUE)) +
+    # lines and points
   geom_path(data = ssm, 
-            aes(x=lon,y=lat,group=id, color=date), size=0.8,  # "#3182bd"
-            alpha = 1)+
-  scale_color_scico(name = "Date",
-                    palette = "lajolla", direction = -1, trans="time",
-                    breaks = breaks,
-                    labels = label_date(format = "%b"),
-                    guide = guide_colourbar(title.position = "top", title.hjust = 0.5,
-                                            frame.colour="black", frame.linewidth=1, frame.linetype=1,
-                                            ticks.colour = "black", ticks = TRUE)) +
-  # land mask
-  #geom_sf(fill=grey(0.7), colour = grey(0.6), size = 0.1, data=land)+
-  # spatial domain
-  coord_sf(xlim = xl, ylim = yl, expand=c(0.02, 0.02)) +
-  labs(x='',y='') +
-  # facet per individual
-  facet_wrap(tripType~., ncol = 3)+
-  # labels and images on individual facets
-  #geom_text(data=labels, aes(x=-43, y=-69, label=label)) +
-  # theme
-  theme_bw() +
-  theme(
-    legend.position='bottom',
-    legend.direction = "horizontal",
-    legend.box="horizontal",
-    legend.title = element_text(size = 10),
-    legend.key.height=grid::unit(0.4,"cm"),
-    legend.key.width=grid::unit(1,"cm"),
-    legend.text = element_text(size = 10),
-    panel.grid = element_blank(),
-        strip.text.x = element_blank(),
-        strip.background = element_blank())
+            aes(x=lon,y=lat,group=tripID, color=id), size=0.8,  # "#3182bd"
+            alpha = 1) +
+    # land mask
+    geom_sf(fill=grey(0.7), colour = grey(0.6), size = 0.1, data=land) +
+    # spatial domain
+    #coord_sf(xlim = xl, ylim = yl) +
+    coord_sf(xlim = lon_bounds, ylim = lat_bounds, expand = F, ndiscr = 1000) +
+    #, expand = F, ndiscr = 1000) +
+    labs(x='',y='') +
+    # facet per individual
+    #facet_grid(tripID~., scales="free") +
+    # labels and images on individual facets
+    #geom_text(data=labels, aes(label=label), vjust = "inward", hjust = "inward") +
+    annotate("text",label=labels$label, x = -Inf, y = Inf, hjust = -0.3, vjust = 1.5) +
+    # theme
+    theme_bw() +
+    theme(
+      legend.position='none',
+      panel.grid = element_blank(),
+      strip.text.x = element_blank(),
+      strip.background = element_blank())
+  
+  # Export plot
+  p_png <- paste0(outdir, "/trip", i, ".png")
+  ggsave(p_png, p, width=16, height=22, units="cm", dpi=300)
+  
+}
 
-# Export plot
-p_png <- paste0(outdir, "/individual-trips.png")
-ggsave(p_png, p, width=16, height=22, units="cm", dpi=300)
+
 
 
