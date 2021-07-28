@@ -49,7 +49,7 @@ enviro <- rbindlist(foreach(j=1:nrow(data), .packages = c("lubridate", "raster",
 data <- cbind(data, enviro)
 
 # select
-data <- dplyr::select(data, sp_code, date, lon, lat, occ, all_of(all_vars))
+data <- dplyr::select(data, sp_code, id, date, lon, lat, occ, all_of(all_vars))
 
 # remove grid cells with > 1 variable with missing data
 data$na_count <- rowSums(is.na(data))

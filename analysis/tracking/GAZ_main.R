@@ -136,7 +136,7 @@ cores <- 40
 res <- 0.1  # size of spatial bin, in decimal degrees
 temporal_thrs <- 2  # length of temporal bin, in days
 sim_n <- 30  # select number of simulations to use
-source("analysis/tracking/scr/pres_abs_v2.R")
+source("analysis/tracking/scr/pres_abs_v3.R")
  
 # # Extract environmental data
 stack_repo <- paste0(output_data, "/stack_daily")
