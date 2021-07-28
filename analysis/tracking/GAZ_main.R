@@ -36,7 +36,7 @@ reg_time_step <- 2  # time step to interpolate positions, in hours
 mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
 
 # Simulations
-sim_n <- 30  # number of simulations
+sim_n <- 50  # number of simulations
 sim_fix_last <- TRUE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations
 sim_by_trip <- TRUE  # generate simulation by trip rather than full track
