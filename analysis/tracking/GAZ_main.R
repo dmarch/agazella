@@ -37,7 +37,7 @@ mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
 
 # Simulations
 sim_n <- 30  # number of simulations
-sim_fix_last <- FALSE  # fix last track location
+sim_fix_last <- TRUE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations
 sim_by_trip <- TRUE  # generate simulation by trip rather than full track
 #t_thrs <- 24 * 60 * 60  # temporal distance, in seconds

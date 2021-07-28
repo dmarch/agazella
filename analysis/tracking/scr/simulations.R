@@ -1,10 +1,9 @@
 #-------------------------------------------------------------------------------------
-# 04_simulations        Simulate tracks
+# simulations        Simulate tracks
 #-------------------------------------------------------------------------------------
 # This script simulates tracks to generate pseudo absences
 #
 # Main steps are:
-# - Create an ocean mask
 # - Simulate tracks
 
 
@@ -77,7 +76,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "availability", "data.table", "r
     
     # select data for selected segment
     d <- dplyr::filter(data, trip == trips[j])
-    
+
     # Fit a vector-autoregressive movement model to this filtered track.
     # This model assumes that the x- and y-speeds at time t are a linear function
     # of the speeds at time t-1, plus random noise.
@@ -89,10 +88,8 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "availability", "data.table", "r
     
     ## generate simulations
     data_list <- list()
-    #s <- 1
-    
+
     for (s in 1:sim_n){
-    #while(s <= sim_n){  
       # Now we can use that fitted model to generate new tracks. 
       # Simulated track are fixed to the same start always. End points fixed for central-place foragers
       # Land mask is applied:
@@ -111,8 +108,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "availability", "data.table", "r
       
       ## append data.frame into list
       data_list[[s]] <- df
-      #s <- s + 1
-    }
+     }
 
     ## combine simulations into a single data.frame
     simdf <- rbindlist(data_list)
