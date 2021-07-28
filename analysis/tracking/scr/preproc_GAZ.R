@@ -1,16 +1,12 @@
 #-----------------------------------------------------------------------------------------
-# 01_preproc_GAZ.R        Pre-process loggerhead tracking data
+# 01_preproc_GAZ.R        Pre-process tracking data
 #-----------------------------------------------------------------------------------------
-# This script pre-processes tracking data. The main goal is to standardize among multiple
-# formats (tag manufacturers, custom pre-processing from different labs) and generate a
-# common and standardized format to then follow a common workflow
+# This script pre-processes tracking data. The main goal is to standardize data
+# formats
 #
-# About Anctartic fur seal data:
-# Loggerhead input data has been prepared by Lluis Cardona (UB)
-#
-# All tags have been previously standardized into a common format
-#
-# All location data correspond to Argos
+# About Antarctic fur seal data:
+# Dataset has been prepared by Lluis Cardona (UB). All tags have been previously standardized
+# into a custom common format. All location data correspond to Argos
 
 
 #---------------------------------------------------------------
@@ -25,11 +21,9 @@ registerDoParallel(cl)
 #---------------------------------------------------------------
 
 # input file with batch data
-# file <- "data/raw/tracking/TelemetriaPPT.xlsx"
 file <- paste0(input_data, "/tracking/TelemetriaPPT.xlsx")
 
 # output directory
-#output_data <- paste0("data/out/tracking/", sp_code, "/L0_locations")
 outdir <- paste0(output_data, "/tracking/", sp_code, "/L0_locations")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
@@ -58,11 +52,8 @@ foreach(i=db$id, .packages=c("dplyr", "ggplot2", "stringr")) %dopar% {
   dataL0 <- dplyr::filter(df, id == i)
   
   # define "trips"
+  # at this step we use animal ID. See filter_locs.R for further steps
   dataL0$trip <- dataL0$id
-  #dataL0$trip <- segmentOnPort(dataL0$habitat)  # generate segments including periods on land
-  #dataL0 <- filter(dataL0, habitat == 2)  # remove periods on land
-  #dataL0$trip <- segmentOnPort(dataL0$trip)  # regenerate trip id
-  #dataL0$trip <- paste(i, str_pad(dataL0$trip, 3, pad = "0"), sep="_") 
   dataL0 <- dplyr::select(dataL0, id, trip, everything())
   
   # store into individual folder at output path

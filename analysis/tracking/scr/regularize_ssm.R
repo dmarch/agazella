@@ -1,8 +1,6 @@
 #-------------------------------------------------------------------------------------
-# 03_regularize_foieGras     Interpolate tracks into regular time steps using foieGras
+# 03_regularize_ssm     Interpolate tracks into regular time steps using foieGras
 #-------------------------------------------------------------------------------------
-# This script processes animal tracking data following a common approach between
-# different species.
 #
 # Main steps are:
 # - Regularize tracks
@@ -76,11 +74,7 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "foieGras", "stringr")) %dopar% 
 #for (i in tags){
   
   print(paste("Processing tag", i))
-  # 
-  # # import data
-  # loc_file <- paste0(indir, "/", i, "_L1_locations.csv")
-  # data <- readTrack(loc_file)
-  
+
   # subset data
   # filter by id and selected trips
   data <- filter(df, id == i, trip %in% trips$trip)
@@ -88,8 +82,8 @@ foreach(i=tags, .packages=c("dplyr", "ggplot2", "foieGras", "stringr")) %dopar% 
   ###### State-Space Model
   
   # convert to foieGras format
-  if(tag_type == "GPS") indata <- data %>% dplyr::select(trip, date, lc, lon, lat) %>% rename(id = trip) 
-  if(tag_type == "PTT") indata <- data %>% dplyr::select(trip, date, lc, lon, lat, smaj, smin, eor) %>% rename(id = trip) 
+  if(tag_type == "GPS") indata <- data %>% dplyr::select(trip, date, lc, lon, lat) %>% dplyr::rename(id = trip) 
+  if(tag_type == "PTT") indata <- data %>% dplyr::select(trip, date, lc, lon, lat, smaj, smin, eor) %>% dplyr::rename(id = trip) 
   
   # filter location class data with NA values
   # very few cases, but creates an error in fit_ssm

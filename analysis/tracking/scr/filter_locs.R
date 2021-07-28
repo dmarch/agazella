@@ -1,12 +1,12 @@
 #-------------------------------------------------------------------------------------
-# BSH_02_postproc     Main processing of tracking data
+# filter_locs.R     Main processing of tracking data
 #-------------------------------------------------------------------------------------
-# This script processes animal tracking data following a common approach between
-# different species.
+# This script processes animal tracking data.
 #
 # Main steps are:
 # - Selection of tracks given a defined criteria
 # - Filter location data: Near-duplicate positions, filter, angle and point on land
+# - Trip definition
 
 
 #---------------------------------------------------------------

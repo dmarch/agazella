@@ -12,7 +12,7 @@ tag_type <- "PTT"
 
 
 # Trip definition
-trip_type <- "time"  # haul: trim track by haul-out locations; time: trim track by time gaps
+trip_type <- "haul"  # haul: trim track by haul-out locations; time: trim track by time gaps
 trip_time_gap <- 7 * 24  # (used if trip_type == time) Tracks with data gaps in excess of [seg_time_gap] hours were broken up for separate modeling
 
 # Track selection
@@ -30,7 +30,7 @@ filt_ang <- c(15, 25) # value of the angle using in sdafilter, no spikes are rem
 filt_distlim <- c(2500, 5000) # value of the limite distance using in sdafilter, no spikes are removed if ang=-1
 
 # Track regularization
-reg_time_step <- 6  # time step to interpolate positions, in hours
+reg_time_step <- 2  # time step to interpolate positions, in hours
 
 # create ocean mask
 mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
@@ -55,7 +55,6 @@ env_max_date <- as.Date("2019-09-16")
 #---------------------------------------------------------------
 
 # Load dependencies
-# source("conf/config.R")
 source("setup.R")
 source("scr/fun_track_reading.R")  # read multiple tracking data formats
 source("scr/fun_track_plot.R")  # plot tracking data
