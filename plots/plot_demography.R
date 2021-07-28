@@ -12,7 +12,7 @@ demo_xls <- paste0(input_data, "/cardona/DadesDemografia.xlsx")
 data <- read_excel(demo_xls)
 
 # order factor levels
-data$class <- factor(data$class, levels = c("juvenile", "subadult", "adult"))
+data$class <- factor(data$class, levels = c("juvenile", "sub-adult", "adult"))
 
 # plot
 p <- ggplot(data, aes(x=location, y=percentage_avg, fill=class)) + 
@@ -27,7 +27,7 @@ p <- ggplot(data, aes(x=location, y=percentage_avg, fill=class)) +
   # y axis
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   # add labels
-  xlab("Haul-out location") + ylab("Percentage (%)") +
+  xlab("Haul-out location") + ylab("Population (%)") +
   # theme
   theme_article(base_size=14) +
   theme(legend.title = element_blank(),

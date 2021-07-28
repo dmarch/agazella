@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------------------
 
 # set computer
-cpu <- "mac"  # "pc", "mac". "server"
+cpu <- "pc"  # "pc", "mac". "server"
 
 # If you want to give MaxEnt (the Java virtual machine that runs it) more memory,
 # you can do that by running something like this (for 1 GB) before you load the dismo library.
