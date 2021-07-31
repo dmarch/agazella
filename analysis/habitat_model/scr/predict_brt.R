@@ -3,12 +3,13 @@
 #---------------------------------------------------------------------------------------------------
 
 mod_code <- "brt"
+bootstrap <- F
 
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-indir <- paste(output_data, "habitat-model", sp_code, mod_code, sep="/")
-outdir <- paste(output_data, "habitat-model", sp_code, mod_code, "predict", sep="/")
+indir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, sep="/")
+outdir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, "predict", sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 ## Import landmask

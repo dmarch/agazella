@@ -15,11 +15,12 @@ pacman::p_load("data.table", "tidyr", "dplyr", "lubridate", "readxl", "stringr",
                "foreach", "doParallel",  # parallel computing
                "move", "moveVis", "SDLfilter", "adehabitatHR", "foieGras", "argosfilter",  # movement
                "availability", # https://github.com/AustralianAntarcticDataCentre/availability
-               "corrplot", "dismo", "gbm", "randomForest", "Hmisc", "ggBRT", # habitat model
+               "corrplot", "dismo", "gbm", "randomForest", "Hmisc", "ggBRT", "groupdata2", # habitat model
                "rJava", "fmsb",  # miscellaneous
                "rnaturalearthdata", "rnaturalearth",  # spatial data
                "raster", "sf", "ncdf4", "rgeos","maptools",  # spatial
-               "rdrop2")  # dropbox data
+               "rdrop2",
+               install = FALSE)  # dropbox data
 
 # Set project projections
 crs_proj <- "+init=epsg:4326"

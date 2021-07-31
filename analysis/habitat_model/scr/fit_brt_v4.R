@@ -75,9 +75,35 @@ train$RN <- sample.int(100, size=nrow(train), replace=T, prob=NULL)
 #-----------------------------------------------------------------
 # Prepare folds
 #-----------------------------------------------------------------
+# 5-k folds
+# randomly selected individuals, in which each individual contributed to one fold with 100% of its fixes 
+
+n.folds <- 14
 
 
+set.seed(123)
+train$id <- as.factor(train$id)
+f <- fold(data = train, id_col = "id", method = "n_dist", k = n.folds)
 
+# prepare
+train <- f %>%
+  dplyr::rename(fold = .folds) %>%
+  dplyr::mutate(fold = as.numeric(fold)) %>%
+  as.data.frame()
+
+
+table(train$fold)
+train %>%
+  group_by(id, fold) %>%
+  dplyr::summarize(n = n())
+
+
+# random folds
+# n.folds <- 14
+# n.cases <- nrow(train)
+# selector <- rep(seq(1, n.folds, by = 1), length = n.cases)
+# selector <- selector[order(runif(n.cases, 1, 100))]
+# train$fold <- selector
 
 
 #-----------------------------------------------------------------
@@ -92,11 +118,11 @@ vars <- c(vars, "RN")
 # Define number of trees
 ini.nt = 50
 max.nt = 20000
-step.nt = 50
+step.nt = 10#50
 tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 
 # Define combination of hyper-parameters
-comb <- expand.grid(lr=c(0.001, 0.005, 0.01, 0.05), tc=c(1,3,5), bf=c(0.5, 0.6, 0.7)) #combination
+comb <- expand.grid(lr=c(0.0005, 0.001, 0.005, 0.01, 0.05), tc=c(1,3,5), bf=c(0.5, 0.6, 0.7)) #combination
 
 
 ## Prepare clusters
@@ -111,18 +137,20 @@ all_list <- foreach(i=1:nrow(comb), .packages=c("dismo", "gbm", "dplyr")) %dopar
   # Uses a default 10-fold cross-validation
   # faster learning rate means larger values
   mod <- tryCatch(
-                  gbm.step(data = train,             # data.frame with data
+                  dismo::gbm.step(data = train,             # data.frame with data
                   gbm.x = vars,          # predictor variables
                   gbm.y = "occ",            # response variable
                   family = "bernoulli",  # the nature of errror structure
                   tree.complexity = comb$tc[i],   # tree complexity
                   learning.rate = comb$lr[i],  # learning rate
                   bag.fraction = comb$bf[i],    # bag fraction
+                  fold.vector = train$fold,
+                  n.folds = length(unique(train$fold)),
                   n.trees = ini.nt, step.size = step.nt, max.trees = max.nt)   
-                  , error = function(e) return(NA))
+                  , error = function(e) return(NULL))
   
   
-  if(!is.na(mod)) {
+  if(!is.null(mod)) {
     # Keep CV parameters
     mod_out <- data.frame(
       tree.complexity = mod$interaction.depth,
@@ -189,6 +217,7 @@ stopCluster(cl)
 p <- ggplot(data = cv_deviance) +
   geom_line(data = dplyr::rename(cv_deviance, comb = id), aes(x = ntrees, y = cv_deviance, group = comb), color = "grey80") +
   geom_line(aes(x = ntrees, y = cv_deviance, group = id), color = "firebrick3") +
+  scale_x_continuous(limits = c(0, max(cv_deviance$ntrees[!is.na(cv_deviance$cv_deviance)]))) +
   facet_wrap(id ~.,) +
   theme_article()
 outfile <- paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.png")
@@ -211,7 +240,7 @@ saveRDS(predict_list, outfile)
 mod_out <- read.csv(paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.csv"))
 predict_list <- readRDS(paste0(outdir, "/", sp_code, "_", mod_code, "_predlist.rds"))
 
-select_model_id <- 36
+select_model_id <- 8#36
 
 tc <- mod_out$tc[select_model_id]
 lr <- mod_out$lr[select_model_id]
@@ -270,10 +299,10 @@ find.int <- dismo::gbm.interactions(mod_full)
 find.int$interactions
 find.int$rank.list
 
-dismo::gbm.perspec(mod_full, 11, 9)
+dismo::gbm.perspec(mod_full, 5, 9)
 gbm.perspec(mod_full, 12, 9)
 gbm.perspec(mod_full, 12, 10)
-gbm.perspec(mod_full, 13, 3)
+dismo::gbm.perspec(mod_full, 13, 3)
 
 #-----------------------------------------------------------------
 # BRT - Predict on testing dataset
@@ -348,7 +377,7 @@ registerDoParallel(cl)
 foreach(i=1:n.boot, .packages=c("dismo", "gbm", "dplyr", "splitstackshape", "stringr")) %dopar% {
 
   # sampled half the data (with replacement) to fit the model (Hindell et al. 2020)
-  idata <- stratified(train, c("occ", "date"), 0.5, replace = TRUE)
+  idata <- stratified(train, c("occ", "id", "date"), 0.5, replace = TRUE)
   
   # fit BRT
   mod_boot <- dismo::gbm.fixed(data = idata,             # data.frame with data

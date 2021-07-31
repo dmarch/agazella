@@ -20,9 +20,9 @@ boot <- T
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-if(boot == F) indir <- paste(output_data, "habitat-model", sp_code, mod_code, "predict", sep="/")
-if(boot == T) indir <- paste(output_data, "habitat-model", sp_code, mod_code, "predict_boost", sep="/")
-outdir <- paste(output_data, "habitat-model", sp_code, mod_code, "monthly-plots", sep="/")
+if(boot == F) indir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, "predict", sep="/")
+if(boot == T) indir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, "predict_boost", sep="/")
+outdir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, "monthly-plots", sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
@@ -105,7 +105,7 @@ ggsave(p_png, p, width=30, height=20, units="cm", dpi=300)
 
 
 
-#### Calculate monthly sea ice edge
+#### Calculate monthly sea ice edge -------------------------------------------------------------------
 # Monthly sea ice area is derived from the monthly mean of sea ice cover
 
 # list all stackfiles per month

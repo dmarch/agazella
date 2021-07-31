@@ -4,13 +4,13 @@
 
 mod_code <- "brt"
 cores <- 20
-
+bootstrap <- T
 
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-indir <- paste(output_data, "habitat-model", sp_code, mod_code, sep="/")
-outdir <- paste(output_data, "habitat-model", sp_code, mod_code, "predict_boost", sep="/")
+indir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, sep="/")
+outdir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, "predict_boost", sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 ## Import landmask
@@ -64,8 +64,12 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   pred_stack <- raster::stack(stack_list)
   
   # Average predictions
-  pred <- raster::mean(pred_stack)
-  pred_sd <- raster::calc(pred_stack, sd)
+  pred_med <- raster::calc(pred_stack, median)
+
+  #confidence interval 95% range 
+  pred_cil <- raster::calc(pred_stack, fun = function(x){quantile(x, probs = c(0.025),na.rm=TRUE)})
+  pred_ciu <- raster::calc(pred_stack, fun = function(x){quantile(x, probs = c(0.975),na.rm=TRUE)})
+  pred_cir <- pred_ciu - pred_cil
   
   # set/create folder
   product_folder <- paste(outdir, YYYY, MM, sep="/")  # Set folder
@@ -89,7 +93,7 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   dev.off()
   
   # export plot
-  pngfile <- paste0(product_folder, "/", format(date, "%Y%m%d"),"_", sp_code, "_", mod_code, "_pred_sd.png")
+  pngfile <- paste0(product_folder, "/", format(date, "%Y%m%d"),"_", sp_code, "_", mod_code, "_pred_cir.png")
   png(pngfile, width=560, height=600, res=100)
   plot(pred_sd, main = paste(sp_name, "   Model:", mod_code, "\n", date), col = viridis(100))
   plot(land, col="grey80", border="grey60", add=TRUE)
