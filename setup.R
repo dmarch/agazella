@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------------------
 
 # set computer
-cpu <- "server"  # "pc", "mac". "server"
+cpu <- "pc"  # "pc", "mac". "server"
 
 # If you want to give MaxEnt (the Java virtual machine that runs it) more memory,
 # you can do that by running something like this (for 1 GB) before you load the dismo library.
@@ -18,7 +18,7 @@ pacman::p_load("data.table", "tidyr", "dplyr", "lubridate", "readxl", "stringr",
                "corrplot", "dismo", "gbm", "randomForest", "Hmisc", "ggBRT", "groupdata2", # habitat model
                "rJava", "fmsb",  # miscellaneous
                "rnaturalearthdata", "rnaturalearth",  # spatial data
-               "raster", "sf", "ncdf4", "rgeos","maptools",  # spatial
+               "raster", "sf", "ncdf4", "rgeos","maptools", "gdistance",  # spatial
                "rdrop2",
                install = FALSE)  # dropbox data
 

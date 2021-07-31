@@ -3,14 +3,8 @@
 #-------------------------------------------------------------------------------------------
 # This script generates a daily multiband raster to then make model predictions.
 
-#source("conf/config.R")
 source("setup.R")
 source("scr/fun_enviro.R")  # function to process environmental data
-
-
-
-### TODO:
-# Round values of each variable
 
 
 
@@ -45,21 +39,10 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 # 1. Create oceanmask
 #---------------------------------------------------------------
 
-# Import oceanmask
-# ocean <- readOGR("data/raw/ext/oceanmask","WestMed_area")
-# ocean <- spTransform(ocean, crs_proj)
-
-
-
 # create base raster
 m <- raster(e, res = res, crs = crs("+proj=longlat +datum=WGS84"))
 m[] <- 1
 
-# rasterize ocean mask
-# m <- rasterize(as(ocean,"SpatialPolygons"), r)
-# 
-# # export ocean mask for further analysis
-# writeRaster(m, "data/out/environment/static/oceanmask.nc", format="CDF",overwrite=TRUE)
 
 #---------------------------------------------------------------
 # 2. Import environmental data
@@ -72,7 +55,8 @@ slope <- raster(paste0(static_data, "/derived_slope.nc"))  # slope
 slope <- slope+0
 sdist <- raster(paste0(static_data, "/derived_sdist.nc"))  # distance to shore
 sdist <- sdist+0
-
+d2col <- raster(paste0(static_data, "/d2col.nc"))  # distance to shore
+d2col <- d2col+0
 
 # import catalogue with oceanographic products
 provider_paths <- list(CMEMS = paste0(input_data, "/cmems"),#"data/cmems",
@@ -88,6 +72,7 @@ catalog <- import_catalog("cmems/agazella_catalog.csv", provider_paths)
 bat <- prepareGrid(bathy, m, method="bilinear", name="BAT")
 slp <- prepareGrid(slope, m, method="bilinear", name="SLP")
 sdist <- prepareGrid(sdist, m, method="bilinear", name="SDIST")
+d2col <- prepareGrid(d2col, m, method="bilinear", name="SDIST")
 stack_static <- stack(bat, slp, sdist)
 
 
