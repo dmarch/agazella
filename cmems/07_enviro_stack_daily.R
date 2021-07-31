@@ -72,8 +72,8 @@ catalog <- import_catalog("cmems/agazella_catalog.csv", provider_paths)
 bat <- prepareGrid(bathy, m, method="bilinear", name="BAT")
 slp <- prepareGrid(slope, m, method="bilinear", name="SLP")
 sdist <- prepareGrid(sdist, m, method="bilinear", name="SDIST")
-d2col <- prepareGrid(d2col, m, method="bilinear", name="SDIST")
-stack_static <- stack(bat, slp, sdist)
+d2col <- prepareGrid(d2col, m, method="bilinear", name="D2COL")
+stack_static <- stack(bat, slp, sdist, d2col)
 
 
 

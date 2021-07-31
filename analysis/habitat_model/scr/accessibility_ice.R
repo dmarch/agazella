@@ -63,6 +63,8 @@ for(i in 1:length(dates)){
   # Import environmental stack
   e <- raster::stack(grdfile)
   idist <- e$EDGE
+  idist[idist<0] <- 0
+  
   
   ## Create an absence map
   rabs <- idist
