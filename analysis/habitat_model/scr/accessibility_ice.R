@@ -37,7 +37,6 @@ dates <- seq.Date(min(data$date), max(data$date), by="day")  # define sequence
 
 
 
-
 #-----------------------------------------------------------------
 # Get presence/absence data and link to distance to ice edge
 #-----------------------------------------------------------------
@@ -63,7 +62,7 @@ for(i in 1:length(dates)){
   # Import environmental stack
   e <- raster::stack(grdfile)
   idist <- e$EDGE
-  idist[idist<0] <- 0
+  idist[idist<0] <- NA
   
   
   ## Create an absence map
@@ -79,11 +78,16 @@ for(i in 1:length(dates)){
   rpa <- raster::mask(rpa, rabs)
   names(rpa) <- "OCC"
   
+  ## ncell raster
+  rcell <- e$D2COL
+  rcell[] <- 1:ncell(rcell)
+  names(rcell) <- "CELLID"
+  
   ## Prepare data.frame
-  s <- stack(rpa, idist)  # combine
+  s <- stack(rpa, idist, e$D2COL/1000, rcell)  # combine
   distdf <- data.frame(na.omit(values(s)))
   distdf$date <- date
-  
+
   # appent to list
   dist_list[[i]] <- distdf
 }
@@ -94,25 +98,41 @@ dist <- rbindlist(dist_list)
 dist$month <- month(dist$date)
 
 
+# remove absence cells with at any observed or simulate location
+cell_with_pres <- dist %>%
+  dplyr::filter(OCC == 1) %>%
+  distinct(CELLID)
+
+dist <- dist %>%
+  dplyr::filter(!(OCC == 0 & CELLID %in% cell_with_pres$CELLID))
+
+
+# also, remove duplicated absences within same month
+select_absences <- dist %>%
+  dplyr::filter(OCC == 0) %>%
+  distinct(CELLID, month, .keep_all = TRUE)
+
+# select presences
+select_pres <- dist %>%
+  dplyr::filter(OCC == 1) %>%
+  distinct(OCC, CELLID, month, .keep_all = TRUE)
+
+# combine
+dist <- rbind(select_absences, select_pres)
+
 
 #-----------------------------------------------------------------
 # Fit binomial models
 #-----------------------------------------------------------------
 
-# replace negative values with zero
-dist$EDGE[dist$EDGE < 0] <- 0
 
 # if the dataset is too large generate a random subsample without replacement
 # stratification by prevalence and date
 if(nrow(dist) > 40000){
   prop <- 40000/nrow(dist)
-  dist <- stratified(dist, c("OCC", "month"), size=prop)
-  #dist <- sample_n(dist, size = 40000, replace = FALSE)
+  dist <- stratified(dist, c("OCC"), size=prop)
+  #dist2 <- sample_n(dist, size = 40000, replace = FALSE)
 } 
-
-dist %>%
-  dplyr::group_by(OCC, month) %>%
-  dplyr::summarize(n=n())
 
 
 # Fitted binomial models with a smooth, monotonic decreasing constraint (see Hindell 2020)
@@ -126,20 +146,27 @@ scamMod <- scam(formula = OCC ~ s(EDGE, bs="mpd"),  # Monotone decreasing P-spli
 saveRDS(scamMod, paste0(output_data, "/", sp_code, "_accessScam.RDS"))
 
 
+# plot
+dfpred <- data.frame(EDGE = seq(round(min(dist$EDGE)), round(max(dist$EDGE)), 10))
+dfpred$pre <- predict.scam(scamMod, newdata = dfpred, type="response")
+plot(dfpred$EDGE, dfpred$pre, type="l")
+
+
 # Alternative solution is use GLM
 # Results are very similar
-# glmMod <- glm(OCC ~ CDIST, data = dist, family = binomial)
+glmMod <- glm(OCC ~ EDGE, data = dist, family = binomial)
 # saveRDS(glmMod, paste0(output_data, "/", sp_code, "_accessGLM.RDS"))
 
-# plot
-#dfpred <- data.frame(CDIST = seq(1, 1694453, 1000))
-#dfpred$pre <- predict.scam(scamMod, newdata = dfpred, type="response")
-#dfpred$pre <- predict.glm(glmMod, newdata = dfpred, type="response")
-#plot(dfpred$CDIST, dfpred$pre)
 
 #-----------------------------------------------------------------
 # Predict model
 #-----------------------------------------------------------------
+
+
+## Predict model to each colony
+accessibility <- predict(s, scamMod, type="response")
+
+
 
 ## Predict model to each colony
 accessCol <- stack()
