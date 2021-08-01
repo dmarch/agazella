@@ -7,8 +7,8 @@
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-indir <- paste0(output_data, "/habitat-model/", sp_code)
-outdir <- paste0(output_data, "/habitat-model/", sp_code)
+indir <- paste0(output_data, "/habitat-model-v2/", sp_code)
+outdir <- paste0(output_data, "/habitat-model-v2/", sp_code)
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
@@ -83,7 +83,7 @@ data$type[data$occ == 0] <- "abs"
 # create plot per variable
 p1 <- density.plot(title="", xlab="BAT", legend="", alpha=0.35, data=data, var=data$BAT, group=data$type)
 p2 <- density.plot(title="", xlab="SLP", legend="", alpha=0.35, data=data, var=data$SLP, group=data$type)
-p3 <- density.plot(title="", xlab="SDIST", legend="", alpha=0.35, data=data, var=data$SDIST, group=data$type)
+#p3 <- density.plot(title="", xlab="SDIST", legend="", alpha=0.35, data=data, var=data$SDIST, group=data$type)
 p4 <- density.plot(title="", xlab="SST", legend="", alpha=0.35, data=data, var=data$SST, group=data$type)
 p5 <- density.plot(title="", xlab="SSTg", legend="", alpha=0.35, data=data, var=data$SSTg, group=data$type)
 p6 <- density.plot(title="", xlab="SAL", legend="", alpha=0.35, data=data, var=data$SAL, group=data$type)
@@ -97,6 +97,7 @@ p13 <- density.plot(title="", xlab="MLD", legend="", alpha=0.35, data=data, var=
 p14 <- density.plot(title="", xlab="EDGE", legend="", alpha=0.35, data=data, var=data$EDGE, group=data$type)
 
 
+
 # create layaout
 lay <- rbind(c(1,2),
              c(3,4),
@@ -104,8 +105,8 @@ lay <- rbind(c(1,2),
              c(7,8),
              c(9,10),
              c(11,12),
-             c(13,14))
-p <- grid.arrange(p1, p2, p3, p4,
+             c(13,NA))
+p <- grid.arrange(p1, p2, p4,
                   p5, p6, p7, p8,
                   p9, p10, p11, p12, p13,p14,
                   layout_matrix = lay)

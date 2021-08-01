@@ -24,7 +24,7 @@ source("scr/fun_habitat_plot.R")
 sp_code <- "GAZ"  # species code
 sp_name <- "A. gazella"
 stack_repo <- paste0(output_data, "/stack_daily")  # location of environmental data
-vars <- c("BAT", "SLP", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "MLD", "EDGE", "SDIST")  # list of all predictors
+vars <- c("BAT", "SLP", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "MLD", "EDGE", "SIT")  # list of all predictors
 # after preliminary exploration, we remove SDIST (distance to coast - high correlated with bat, and can give problems with EDGE) and SIT(sea icea thickness - high correlated with SIC)
 
 ## computer cores
@@ -56,13 +56,11 @@ source("analysis/habitat_model/scr/training_testing.R")
 # - Density plots to compare presence/absence
 source("analysis/habitat_model/scr/eda.R")
 
+
 # After visual inspection, keep and exclude variables
-# We remove SIT (keep SIC) and SAL (keep MLD)
-# vars2remove <- c("SIT")#,  # we keep SIC
-#                  #"SAL",  # we keep MLD
-#                  #"SDIST") # keep BAT
-# 
-# vars <- vars[!vars %in% vars2remove]
+# We remove SIT (keep SIC) 
+vars2remove <- c("SIT")  # we keep SIC
+vars <- vars[!vars %in% vars2remove]
 
 
 #-----------------------------------------------------------

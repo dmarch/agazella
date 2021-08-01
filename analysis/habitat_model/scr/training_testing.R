@@ -8,7 +8,7 @@
 # 1. Set data repository
 #---------------------------------------------------------------
 indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs/")
-outdir <- paste0(output_data, "/habitat-model/", sp_code)
+outdir <- paste0(output_data, "/habitat-model-v2/", sp_code)
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 

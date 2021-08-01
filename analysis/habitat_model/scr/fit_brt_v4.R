@@ -19,7 +19,7 @@ mod_code <- "brt"
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-indir <- paste0(output_data, "/habitat-model/", sp_code, "/")
+indir <- paste0(output_data, "/habitat-model-v2/", sp_code, "/")
 outdir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
@@ -240,7 +240,7 @@ saveRDS(predict_list, outfile)
 mod_out <- read.csv(paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.csv"))
 predict_list <- readRDS(paste0(outdir, "/", sp_code, "_", mod_code, "_predlist.rds"))
 
-select_model_id <- 8#36
+select_model_id <- 43#36
 
 tc <- mod_out$tc[select_model_id]
 lr <- mod_out$lr[select_model_id]

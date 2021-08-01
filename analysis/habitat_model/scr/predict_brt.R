@@ -46,7 +46,7 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   s$CHL <- log1p(s$CHL)
   s$EKE <- log1p(s$EKE)
   s$EDGE[s$EDGE < 0] <- 0
- 
+
    # Model prediction
   pred <- raster::predict(model = mod, object = s, n.trees=mod$gbm.call$best.trees, type="response")
 

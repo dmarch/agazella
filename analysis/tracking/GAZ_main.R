@@ -46,7 +46,7 @@ sim_by_trip <- TRUE  # generate simulation by trip rather than full track
 
 # Extract environment
 env_buffer <- 15000  # radius of buffer to average environmental data around each location, in meters. (15000)
-all_vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE")
+all_vars <- c("BAT", "SLP", "SDIST", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "SIT", "MLD", "EDGE", "D2COL")
 env_max_date <- as.Date("2019-09-16")
 
 
