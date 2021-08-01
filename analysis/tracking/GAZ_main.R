@@ -91,7 +91,7 @@ source("analysis/tracking/scr/preproc_GAZ.R")
 # Filtering is based on selected parameters from above
 source("analysis/tracking/scr/filter_locs.R")
 
-# Step 3. Regularize location data
+# Step 3. Regularize location data (PROBLEMS WITH SERVER - USE PC)
 # Uses correlated random walk state-space model from Jonsen et al. 2019 doi:10.1002/ecy.2566
 source("analysis/tracking/scr/regularize_ssm.R")
 

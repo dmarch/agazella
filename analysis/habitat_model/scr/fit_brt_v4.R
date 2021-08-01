@@ -240,7 +240,7 @@ saveRDS(predict_list, outfile)
 mod_out <- read.csv(paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.csv"))
 predict_list <- readRDS(paste0(outdir, "/", sp_code, "_", mod_code, "_predlist.rds"))
 
-select_model_id <- 43#36
+select_model_id <- 9#36
 
 tc <- mod_out$tc[select_model_id]
 lr <- mod_out$lr[select_model_id]
@@ -302,7 +302,7 @@ find.int$rank.list
 dismo::gbm.perspec(mod_full, 5, 9)
 gbm.perspec(mod_full, 12, 9)
 gbm.perspec(mod_full, 12, 10)
-dismo::gbm.perspec(mod_full, 13, 3)
+dismo::gbm.perspec(mod_full, 14, 12)
 
 #-----------------------------------------------------------------
 # BRT - Predict on testing dataset

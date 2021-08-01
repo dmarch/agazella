@@ -17,6 +17,8 @@ sp_code <- "GAZ"  # species code
 
 # input data paths
 indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs")
+indir <- paste0(output_data, "/habitat-model-v2/", sp_code, "/")
+
 stack_repo <- paste0(output_data, "/stack_daily")
 
 # output data paths
@@ -27,10 +29,15 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 # Prepare data
 #-----------------------------------------------------------------
 
-# Import observations
-obs_file <- paste0(indir, "/", sp_code, "_observations.csv")
+# import observaions
+obs_file <- paste0(indir,"/", sp_code, "_data.csv")
 data <- read.csv(obs_file)
 data$date <- ymd(data$date)
+
+# Import observations
+# obs_file <- paste0(indir, "/", sp_code, "_observations.csv")
+# data <- read.csv(obs_file)
+# data$date <- ymd(data$date)
 
 # Create dates
 dates <- seq.Date(min(data$date), max(data$date), by="day")  # define sequence
@@ -93,7 +100,7 @@ for(i in 1:length(dates)){
 }
 
 
-# combine data from all colonies
+# combine data
 dist <- rbindlist(dist_list)
 dist$month <- month(dist$date)
 
@@ -138,7 +145,7 @@ if(nrow(dist) > 40000){
 # Fitted binomial models with a smooth, monotonic decreasing constraint (see Hindell 2020)
 # Check: https://github.com/SCAR/RAATD/blob/master/Code/runAvailabilityModels_04.R
 # For agazella: https://github.com/SCAR/RAATD/blob/master/Code/runAvailabilityModels_CRAS%26WESE.R
-scamMod <- scam(formula = OCC ~ s(EDGE, bs="mpd"),  # Monotone decreasing P-splines
+scamMod <- scam(formula = OCC ~ s(D2COL, bs="mpd"),  # Monotone decreasing P-splines
                 family = binomial,
                 data = dist)
 

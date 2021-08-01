@@ -24,7 +24,7 @@ source("scr/fun_habitat_plot.R")
 sp_code <- "GAZ"  # species code
 sp_name <- "A. gazella"
 stack_repo <- paste0(output_data, "/stack_daily")  # location of environmental data
-vars <- c("BAT", "SLP", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "MLD", "EDGE", "SIT")  # list of all predictors
+vars <- c("BAT", "SLP", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "MLD", "EDGE", "SIT", "SDIST", "D2COL")  # list of all predictors
 # after preliminary exploration, we remove SDIST (distance to coast - high correlated with bat, and can give problems with EDGE) and SIT(sea icea thickness - high correlated with SIC)
 
 ## computer cores
@@ -61,23 +61,6 @@ source("analysis/habitat_model/scr/eda.R")
 # We remove SIT (keep SIC) 
 vars2remove <- c("SIT")  # we keep SIC
 vars <- vars[!vars %in% vars2remove]
-
-
-#-----------------------------------------------------------
-# 3. MaxEnt (cannot be run in the server as MaxEnt not installed as external software)
-#-----------------------------------------------------------
-
-# 3.1. Fit MaxEnt
-
-#mod_code <- "me"
-#source("analysis/habitat_model/scr/fit_me.R")
-
-
-# 3.2. Cross-validate
-
-
-# 3.3. Predict
-
 
 
 #-----------------------------------------------------------
