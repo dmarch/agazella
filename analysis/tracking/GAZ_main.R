@@ -37,7 +37,7 @@ mcp_expand <- 5  # expand the minimum convex polygon, in degrees.
 
 # Simulations
 sim_n <- 50  # number of simulations
-sim_fix_last <- TRUE  # fix last track location
+sim_fix_last <- FALSE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations
 sim_by_trip <- TRUE  # generate simulation by trip rather than full track
 #t_thrs <- 24 * 60 * 60  # temporal distance, in seconds
@@ -132,7 +132,7 @@ source("analysis/tracking/scr/simulations.R")
 
 
 # Generate Presence-Absence data eliminating overlap between observations
-cores <- 40
+cores <- 50
 res <- 0.1  # size of spatial bin, in decimal degrees
 temporal_thrs <- 2  # length of temporal bin, in days
 sim_n <- 50  # select number of simulations to use
