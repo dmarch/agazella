@@ -9,7 +9,9 @@ bootstrap <- T
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-indir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, sep="/")
+brtDir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, sep="/")
+accessDir <- paste(output_data, "habitat-model-v2", sp_code, "access_boost", sep="/")
+
 outdir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, "predict_boost", sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
@@ -18,11 +20,19 @@ world <- ne_countries(scale = "medium", returnclass = "sp")
 land <- raster::crop(world, raster::extent(-90, -20, -80, -50))
 
 # list of bootstrap models
-outdir_bootstrap <- paste0(indir, "/bootstrap/")
+outdir_bootstrap <- paste0(brtDir, "/bootstrap/")
 boots_files <- list.files(outdir_bootstrap, full.names = T)
 
 # batch import of bootstrap models
-models <- lapply(boots_files, readRDS)
+brt_models <- lapply(boots_files, readRDS)
+
+# list of accessibility models
+access_files <- list.files(accessDir, full.names = TRUE, pattern = ".rds")
+
+# batch import of bootstrap models
+access_models <- lapply(access_files, readRDS)
+
+
 
 # Prepare cluster
 cl <- makeCluster(cores)
@@ -31,7 +41,7 @@ registerDoParallel(cl)
 # Create dates
 dates <- seq.Date(date_start, date_end, by="day")  # define sequence
 
-foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr", "pals", "dismo", "gbm")) %dopar% {
+foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr", "pals", "dismo", "gbm", "scam")) %dopar% {
 
   # Get time information
   date <- dates[i]
@@ -51,12 +61,23 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   s$EKE <- log1p(s$EKE)
   s$EDGE[s$EDGE < 0] <- 0
   
-  # Model prediction
+  # Ice mask
+  iceMask <- reclassify(s$SIC, c(-Inf,0.15,1, 0.15,Inf,0))
+  
+  # Model prediction (BRT)
   stack_list <- list()
-  #foreach(j=1:length(models)) %do% {
-  #foreach(j=1:2, .packages=c("raster", "dismo", "gbm")) %dop% {
-  for(j in 1:length(models)){  
-    pred <- raster::predict(model = models[[j]], object = s, n.trees=models[[j]]$gbm.call$best.trees, type="response")
+
+  for(j in 1:length(brt_models)){  
+    
+    # predict BRT
+    pred_brt <- raster::predict(model = brt_models[[j]], object = s, n.trees=brt_models[[j]]$gbm.call$best.trees, type="response")
+    
+    # predict accessibility
+    pred_access <- raster::predict(object = s, model = access_models[[j]], type="response")
+    pred_access <- pred_access * iceMask
+
+    # combined prediction
+    pred <- pred_brt * pred_access
     stack_list[[j]] <- pred
   }
   
@@ -75,18 +96,18 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   product_folder <- paste(outdir, YYYY, MM, sep="/")  # Set folder
   if (!dir.exists(product_folder)) dir.create(product_folder, recursive = TRUE)  # create output directory if does not exist
   
-  # store file in ncformat
+  # store file
   outfile <- paste0(product_folder, "/", format(date, "%Y%m%d"),"_", sp_code, "_", mod_code, "_pred.tif")
-  writeRaster(pred, filename=outfile, overwrite=TRUE)
+  writeRaster(pred_med, filename=outfile, overwrite=TRUE)
 
-  # store file in ncformat
-  outfile <- paste0(product_folder, "/", format(date, "%Y%m%d"),"_", sp_code, "_", mod_code, "_pred_sd.tif")
-  writeRaster(pred_sd, filename=outfile, overwrite=TRUE)
+  # store file
+  outfile <- paste0(product_folder, "/", format(date, "%Y%m%d"),"_", sp_code, "_", mod_code, "_pred_cir.tif")
+  writeRaster(pred_cir, filename=outfile, overwrite=TRUE)
   
   # export plot
   pngfile <- paste0(product_folder, "/", format(date, "%Y%m%d"),"_", sp_code, "_", mod_code, "_pred.png")
   png(pngfile, width=560, height=600, res=100)
-  plot(pred, main = paste(sp_name, "   Model:", mod_code, "\n", date), zlim=c(0,1), col = viridis(100))
+  plot(pred_med, main = paste(sp_name, "   Model:", mod_code, "\n", date), zlim=c(0,1), col = viridis(100))
   plot(land, col="grey80", border="grey60", add=TRUE)
   text(x = -3.5, y = 44, labels = date)
   box()
@@ -95,7 +116,7 @@ foreach(i=1:length(dates), .packages=c("lubridate", "raster", "stringr", "dplyr"
   # export plot
   pngfile <- paste0(product_folder, "/", format(date, "%Y%m%d"),"_", sp_code, "_", mod_code, "_pred_cir.png")
   png(pngfile, width=560, height=600, res=100)
-  plot(pred_sd, main = paste(sp_name, "   Model:", mod_code, "\n", date), col = viridis(100))
+  plot(pred_cir, main = paste(sp_name, "   Model:", mod_code, "\n", date), col = viridis(100))
   plot(land, col="grey80", border="grey60", add=TRUE)
   text(x = -3.5, y = 44, labels = date)
   box()

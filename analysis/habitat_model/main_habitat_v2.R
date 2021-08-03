@@ -24,7 +24,7 @@ source("scr/fun_habitat_plot.R")
 sp_code <- "GAZ"  # species code
 sp_name <- "A. gazella"
 stack_repo <- paste0(output_data, "/stack_daily")  # location of environmental data
-vars <- c("BAT", "SLP", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "MLD", "EDGE", "SIT", "SDIST", "D2COL")  # list of all predictors
+vars <- c("BAT", "SLP", "SST", "SSTg", "SAL", "SALg", "SSH", "EKE", "CHL", "SIC", "MLD", "EDGE", "SIT")  # list of all predictors
 # after preliminary exploration, we remove SDIST (distance to coast - high correlated with bat, and can give problems with EDGE) and SIT(sea icea thickness - high correlated with SIC)
 
 ## computer cores
