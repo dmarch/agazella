@@ -26,8 +26,9 @@ trips <- trips %>%
          time_start = format(time_start, "%H:%M:%S"),
          time_end = format(time_end, "%H:%M:%S"),
          dateTimeStart = parse_date_time(paste(date_start, time_start), "Ymd HMS"),
-         dateTimeEnd = parse_date_time(paste(date_end, time_end), "Ymd HMS")) %>%
-  dplyr::select(id, tripType, dateTimeStart, dateTimeEnd)
+         dateTimeEnd = parse_date_time(paste(date_end, time_end), "Ymd HMS"),
+         tripID = paste(id, format(dateTimeStart, "%Y%m%d"), sep="_")) %>%
+  dplyr::select(tripID, id, tripType, dateTimeStart, dateTimeEnd)
 
 
 # import animal tracks
@@ -43,12 +44,15 @@ for(i in 1:nrow(trips)){
   ssm_sel <- ssm %>%
     filter(id == trips$id[i], date >= trips$dateTimeStart[i], date <= trips$dateTimeEnd[i]) %>%
     mutate(tripType = trips$tripType[i],
-           tripID = i)
+           tripID = trips$tripID[i])
   trip_list[[i]] <- ssm_sel
 }
 
 trip_data <- rbindlist(trip_list)
 
+
+# check if no data for a given trip
+which(!trips$tripID %in% unique(trip_data$tripID))
 
 # add month
 #ssm$month <- month(ssm$date) %>% as.factor()
@@ -66,7 +70,7 @@ hilldf <- as.data.frame(hill, xy=TRUE) %>% drop_na()
 
 # landmask
 world <- ne_countries(scale = "medium", returnclass = "sf")
-e <- extent(-90, -20, -80, -50)
+e <- extent(-100, -20, -80, -50)
 box = c(xmin = e[1], ymin = e[3], xmax = e[2], ymax = e[4])
 land <- st_crop(world, box)
 
@@ -87,6 +91,8 @@ for(i in 1:length(trips)){
   
   ssm <- filter(trip_data, tripID == trips[i])
   
+  itrip <- trips[i]
+  itrip_type <- paste("Trip type:", ssm$tripType[1])
   
   labels <-ssm %>%
     distinct(id) %>%
@@ -137,11 +143,19 @@ for(i in 1:length(trips)){
     #                                             frame.colour="black", frame.linewidth=1, frame.linetype=1,
     #                                             ticks.colour = "black", ticks = TRUE)) +
     # lines and points
-  geom_path(data = ssm, 
-            aes(x=lon,y=lat,group=tripID, color=id), size=0.8,  # "#3182bd"
+    geom_path(data = ssm, 
+            aes(x=lon,y=lat,group=tripID), color="black", size=0.8,  # "#3182bd"
             alpha = 1) +
     # land mask
     geom_sf(fill=grey(0.7), colour = grey(0.6), size = 0.1, data=land) +
+    # points
+    geom_point(data = ssm[1,], 
+              aes(x=lon,y=lat), color= "darkgreen", fill="white", size=3, shape=24, stroke=2,  # "#3182bd"
+              alpha = 1) +
+    geom_point(data = ssm[nrow(ssm),], 
+               aes(x=lon,y=lat), color= "red", fill="white", size=3, shape=22, stroke=2,  # "#3182bd"
+               alpha = 1) +
+
     # spatial domain
     #coord_sf(xlim = xl, ylim = yl) +
     coord_sf(xlim = lon_bounds, ylim = lat_bounds, expand = F, ndiscr = 1000) +
@@ -152,6 +166,7 @@ for(i in 1:length(trips)){
     # labels and images on individual facets
     #geom_text(data=labels, aes(label=label), vjust = "inward", hjust = "inward") +
     annotate("text",label=labels$label, x = -Inf, y = Inf, hjust = -0.3, vjust = 1.5) +
+    annotate("text",label=itrip_type, x = -Inf, y = Inf, hjust = -0.1, vjust = 2.7) +
     # theme
     theme_bw() +
     theme(
@@ -161,11 +176,54 @@ for(i in 1:length(trips)){
       strip.background = element_blank())
   
   # Export plot
-  p_png <- paste0(outdir, "/trip", i, ".png")
+  p_png <- paste0(outdir, "/trip_", itrip, ".png")
   ggsave(p_png, p, width=16, height=22, units="cm", dpi=300)
   
 }
 
 
 
+
+# define xy limits
+xl <- range(trip_data$lon)+c(-1,1)
+yl <- range(trip_data$lat)+c(-1,1)
+
+xl[2] <- -50
+yl[2] <- -60
+
+# plot
+p <- ggplot()+
+  # # plot hillshade
+  # geom_tile(aes(x=x, y=y, alpha=layer),data=hilldf)+
+  # scale_alpha(range =  c(0, 1), guide = "none") +
+  # # plot bathymetry
+  # geom_tile(aes(x=x,y=y,fill=BAT), alpha=0.8, data=batdf)+
+  # scale_fill_gradient(low=brewer.pal(9,"Blues")[5], high=brewer.pal(9,"Blues")[1],
+  #                     name = "Depth (m)",
+  #                     guide = guide_colourbar(title.position = "top", title.hjust = 0.5,
+  #                                             frame.colour="black", frame.linewidth=1, frame.linetype=1,
+  #                                             ticks.colour = "black", ticks = TRUE)) +
+  # lines and points
+geom_path(data = trip_data, 
+          aes(x=lon,y=lat, group=tripID, color=tripType), size=0.8,  # "#3182bd"
+          alpha = 1) +
+  # land mask
+  geom_sf(fill=grey(0.7), colour = grey(0.6), size = 0.1, data=land) +
+  # spatial domain
+  #coord_sf(xlim = xl, ylim = yl) +
+  coord_sf(xlim = xl, ylim = yl, expand = F, ndiscr = 1000) +
+  #, expand = F, ndiscr = 1000) +
+  labs(x='',y='') +
+  # facet per individual
+  #facet_grid(tripID~., scales="free") +
+  # labels and images on individual facets
+  #geom_text(data=labels, aes(label=label), vjust = "inward", hjust = "inward") +
+  #annotate("text",label=labels$label, x = -Inf, y = Inf, hjust = -0.3, vjust = 1.5) +
+  # theme
+  theme_bw() +
+  theme(
+    legend.position='bottom',
+    panel.grid = element_blank(),
+    strip.text.x = element_blank(),
+    strip.background = element_blank())
 
