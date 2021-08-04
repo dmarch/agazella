@@ -92,7 +92,7 @@ labels <- paste0(mod$contributions$var, " (", relinf, "%)")
 names(labels) <- mod$contributions$var
 
 # select number of variables to plot
-n_plots <- 6
+n_plots <- 5
 data2 <- filter(data, var %in% mod$contributions$var[1:n_plots])
 
 
