@@ -117,12 +117,12 @@ vars <- c(vars, "RN")
 
 # Define number of trees
 ini.nt = 50
-max.nt = 20000
-step.nt = 10#50
+max.nt = 10000
+step.nt = 50#50
 tree.list <- seq(ini.nt,max.nt,by=step.nt) #list of trees for evaluation
 
 # Define combination of hyper-parameters
-comb <- expand.grid(lr=c(0.0005, 0.001, 0.005, 0.01, 0.05), tc=c(1,3,5), bf=c(0.5, 0.6, 0.7)) #combination
+comb <- expand.grid(lr=c(0.001, 0.005, 0.01, 0.05), tc=c(1,3,5), bf=c(0.5, 0.6, 0.7)) #combination
 
 
 ## Prepare clusters
@@ -240,7 +240,7 @@ saveRDS(predict_list, outfile)
 mod_out <- read.csv(paste0(outdir, "/", sp_code, "_", mod_code, "_optim_params.csv"))
 predict_list <- readRDS(paste0(outdir, "/", sp_code, "_", mod_code, "_predlist.rds"))
 
-select_model_id <- 9#36
+select_model_id <- 11#36
 
 tc <- mod_out$tc[select_model_id]
 lr <- mod_out$lr[select_model_id]

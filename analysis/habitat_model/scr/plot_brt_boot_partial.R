@@ -3,7 +3,6 @@
 #---------------------------------------------------------------------------------------------------
 
 mod_code <- "brt"
-cores <- 50
 bootstrap <- T
 n_boot <- 50
 sp_code <- "GAZ"  # species code
@@ -12,14 +11,14 @@ sp_code <- "GAZ"  # species code
 # 1. Set data repository
 #---------------------------------------------------------------
 indir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, sep="/")
-outdir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, "predict_boost", sep="/")
-if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
-
+# outdir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, "predict_boost", sep="/")
+# if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
+# 
 outdir <- paste(output_data, "habitat-model-v2", sp_code, mod_code, sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
-
-
-# import model
+# 
+# 
+# import model full model
 mod <- readRDS(paste0(indir, "/", sp_code, "_", mod_code, ".rds"))
 
 
@@ -85,7 +84,7 @@ data <- rbindlist(data_list)
 # relative importance
 
 
-mod$contributions$var
+
 
 data$var <- factor(data$var, levels = mod$contributions$var)
 relinf <- round(mod$contributions$rel.inf, 1)
@@ -93,7 +92,7 @@ labels <- paste0(mod$contributions$var, " (", relinf, "%)")
 names(labels) <- mod$contributions$var
 
 # select number of variables to plot
-n_plots <- 6
+n_plots <- 5
 data2 <- filter(data, var %in% mod$contributions$var[1:n_plots])
 
 

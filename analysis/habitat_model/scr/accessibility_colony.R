@@ -17,6 +17,7 @@ sp_code <- "GAZ"  # species code
 
 # input data paths
 indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs")
+indir <- paste0(output_data, "/habitat-model-v2/", sp_code, "/")
 stack_repo <- paste0(output_data, "/stack_daily")
 
 # output data paths
@@ -28,7 +29,8 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 #-----------------------------------------------------------------
 
 # Import observations
-obs_file <- paste0(indir, "/", sp_code, "_observations.csv")
+#obs_file <- paste0(indir, "/", sp_code, "_observations.csv")
+obs_file <- paste0(indir,"/", sp_code, "_data.csv")
 data <- read.csv(obs_file)
 data$date <- ymd(data$date)
 
@@ -69,7 +71,10 @@ dist <- data.frame(na.omit(values(s)))
 # if the dataset is too large generate a random subsample without replacement
 # stratification by prevalence and date
 if(nrow(dist) > 40000){
-  dist <- sample_n(dist, size = 40000, replace = FALSE)
+  dist_pres <- filter(dist, OCC == 1)
+  dist_abs <- filter(dist, OCC == 0)
+  dist_abs <- sample_n(dist_abs, size = 40000-nrow(dist_pres), replace = FALSE)
+  dist <- bind_rows(dist_pres, dist_abs)
 } 
 
 
