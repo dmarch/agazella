@@ -65,7 +65,7 @@ data <- data %>%
 data$var <- factor(data$var, levels = data$var)
 
 p <- ggplot(data=data, mapping=aes(x=var, y=median, ymin=cil, ymax=ciu)) + 
-  geom_pointrange(col="skyblue3") +
+  geom_pointrange(col="#377EB8") +
   coord_flip() +
   ylab("Relative influence (%)") + xlab("") +
   theme_article(base_size = 14) +
