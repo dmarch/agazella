@@ -1,8 +1,15 @@
-# agazella
-Satellite tracking of Antarctic fur seal (Arctocephalus gazella)
+## Satellite tracking of Antarctic fur seal (Arctocephalus gazella)
+
+This repository provides the R code that accompanies the article:
+
+David March, Massimiliano Drago, Manel Gazo, Mariluz Parga, Diego Rita & Luis Cardona. Winter distribution of juvenile and sub‑adult male Antarctic fur seals (Arctocephalus gazella) along the western Antarctic Peninsula. Scientific Reports. https://doi.org/10.1038/s41598-021-01700-w
 
 
-# Workflow
+### Requirements
+* R-studio with R >= 3.6.0
+
+
+### Workflow
 
 
 1. Run setup.R to create data paths and check that all required packages are installed
@@ -13,11 +20,13 @@ Satellite tracking of Antarctic fur seal (Arctocephalus gazella)
 6. Habitat model "analysis/habitat_model/main_habitat.R"
 
 
+### Structure of this repostitory
+
+Folder          |  Description    
+--------------- | -------------------
+enviro          | scripts used to download and derive Environmental Data
+analysis        | scripts used to analyse the data. Includes two main subfolders for the analyses of satellite tracks (`/tracking`) and the habitat model (`/habitat_model`)
+plots           | scripts used to generate plots
+scr             | scripts with custom functions
 
 
-## Simulations
-
-Hindell et al 2020: Locations at the animal’s home colony, and locations at known terrestrial resting sites, were fixed at the corresponding time and date in the simulated tracks, accurately simulating central place foraging behaviour.
-
-We chose the number of simulations by plotting the relationship between the number of simulated tracks and the environmental space (rather than the geographic space) encompassed by the set of simulated tracks Tracking of marine predators to protect Southern Ocean ecosystems 4 in each case. This environmental space was characterised as the mean, standard deviation and variance of each of the 19 environmental covariates (described below) (e.g., Supplementary Figure S1). In a few cases the environmental space had not stabilized by 50 simulations but using more than 50 simulations in
-the analyses that followed was often computationally infeasible
