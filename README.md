@@ -1,5 +1,7 @@
 ## Satellite tracking of Antarctic fur seal (*Arctocephalus gazella*)
 
+[![DOI](https://zenodo.org/badge/235335964.svg)](https://zenodo.org/badge/latestdoi/235335964)
+
 This repository provides the R code that accompanies the article:
 
 David March, Massimiliano Drago, Manel Gazo, Mariluz Parga, Diego Rita & Luis Cardona. Winter distribution of juvenile and sub‑adult male Antarctic fur seals (*Arctocephalus gazella*) along the western Antarctic Peninsula. Scientific Reports. https://doi.org/10.1038/s41598-021-01700-w
