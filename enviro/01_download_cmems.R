@@ -78,7 +78,6 @@ keys <- jsonlite::fromJSON(keyfile)
 e <- extent(-90, -20, -80, -40)
 
 # select datasets
-# catalog <- dplyr::filter(catalog, movemed == "y")
 catalog <- dplyr::filter(catalog, provider == "CMEMS")
 
 ## Prepare clusters
@@ -99,8 +98,6 @@ for (i in 1:nrow(catalog)){
                         service.id = catalog$service[i],
                         product.id = catalog$product[i],
                         variable = catalog$variable[i],
-                        #depth.min = catalog$depth_min[i],
-                        #depth.max = catalog$depth_max[i],
                         user = keys$user,
                         pwd = keys$pwd)
   } else {
@@ -137,11 +134,3 @@ for (i in 1:nrow(catalog)){
 
 # stop cluster
 stopCluster(cl)
-
-
-## Version with a regular loop
-# It take approach 8 min per variable per year
-# for(j in 1:length(dates)){
-#   print(j)
-#   download_cmems_daily(date = dates[j], cmems_repo = cmems_repo, cfg = cfg, ROI = e, n_tries = 2, sleep = 10)  # sleep 3
-# }

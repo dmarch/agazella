@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------
-# 05_enviro_stack_daily.R        Create environmental daily stacks of environmental data
+# enviro_stack_daily.R        Create environmental daily stacks of environmental data
 #-------------------------------------------------------------------------------------------
 # This script generates a daily multiband raster to then make model predictions.
 

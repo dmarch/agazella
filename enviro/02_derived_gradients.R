@@ -20,7 +20,7 @@ library(lubridate)
 #-----------------------------------------------
 
 # set repository for CMEMS products
-cmems_repo <- paste0(input_data, "/cmems") #"D:/Data/agazella/cmems"
+cmems_repo <- paste0(input_data, "/cmems")
 
 # import product catalog
 catalog <- read.csv("cmems/agazella_catalog.csv")  # list with updated products for 2019

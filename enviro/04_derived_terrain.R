@@ -1,9 +1,6 @@
 #----------------------------------------------------------------------------------------
-# movemed_terrain.R         Process bathymetry, slope and distace to shore
+# derived_terrain.R         Process bathymetry, slope and distace to shore
 #----------------------------------------------------------------------------------------
-#
-# Input file is Bathymrtry for the whole Mediterranean from EMODnet.
-# Tiles were downloaded separately and then combined using mosaic() in raster package.
 #
 # This script provides the following outputs:
 # - Bathymetry cropped by the study area
@@ -18,7 +15,7 @@ outdir <- paste0(output_data, "/terrain/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 # import bathymetry
-bathync <- paste0(input_data, "/bathymetry/GEBCO_2014_2D.nc")#"E:/data/gebco/RN-4015_1510486680263/GEBCO_2014_2D.nc"
+bathync <- paste0(input_data, "/bathymetry/GEBCO_2014_2D.nc")
 bathy <- raster(bathync)
 
 # crop to larger region of the stud area to calculate distance to shore
@@ -44,12 +41,6 @@ rdist <- distance(bathy_d)  # calculate distance
 rdist <- rdist / 1000  # convert to km
 rdist[rdist == 0] <- NA  # set 0 values to NA
 sdist <- rdist
-
-# # crop again for the study area
-# e <- extent(-7,17,33,45)
-# bathy <- crop(bathy_ag, e)
-# slope <- crop(slope, e)
-# sdist <- crop(rdist, e)
 
 # Export derived products
 writeRaster(bathy, paste0(outdir, "derived_bathy.nc"), format="CDF", overwrite=TRUE)

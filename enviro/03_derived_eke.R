@@ -1,5 +1,5 @@
 #-------------------------------------------
-# movemed_eke.R
+# derived_eke.R
 #-------------------------------------------
 # Derive Eddy kinetic energy
 
@@ -16,7 +16,7 @@ library(doParallel)
 #-----------------------------------------------
 
 # set repository for CMEMS products
-cmems_repo <- paste0(input_data, "/cmems") #"D:/Data/agazella/cmems"
+cmems_repo <- paste0(input_data, "/cmems")
 
 # import product catalog
 catalog <- read.csv("cmems/agazella_catalog.csv")  # list with updated products for 2019
@@ -36,7 +36,6 @@ catalog$date_max <- dmy(catalog$date_max)
 
 input_u_product_id <- 4
 input_v_product_id <- 5
-
 output_product_id <- 12
 
 
