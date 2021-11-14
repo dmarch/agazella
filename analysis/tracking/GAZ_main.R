@@ -1,7 +1,6 @@
 #----------------------------------------------------------------------------------
-# GAZ_main.R            Main script for processing Anctartick fur seal tracking
+# GAZ_main.R            Main script for processing satellite tracking data
 #----------------------------------------------------------------------------------
-
 
 
 #---------------------------------------------------------------
@@ -40,9 +39,6 @@ sim_n <- 50  # number of simulations
 sim_fix_last <- FALSE  # fix last track location
 sim_exclude <- NULL # remove individuals from simulations
 sim_by_trip <- TRUE  # generate simulation by trip rather than full track
-#t_thrs <- 24 * 60 * 60  # temporal distance, in seconds
-#sp_thrs <- 5000  # spatial distance, in meters
-#exclude_dur <- 2 * 24 * 60 * 60 # exclude data based on duration from deployment, in seconds
 
 # Extract environment
 env_buffer <- 15000  # radius of buffer to average environmental data around each location, in meters. (15000)
@@ -62,21 +58,9 @@ source("scr/fun_track_proc.R")  # miscellanea of processing functions
 source("scr/fun_enviro.R")  # function to process environmental data
 source("scr/fun_survey.R")
 
-#---------------------------------------------------------------
-# 3. Import external data
-#---------------------------------------------------------------
-
-# # Landmask
-# land <- readOGR("data/raw/ext/landmask","landmask_med")
-# land <- spTransform(land, crs_proj)
-# 
-# # Oceanmask
-# ocean <- readOGR("data/raw/ext/oceanmask","WestMed_area")
-# ocean <- spTransform(ocean, crs_proj)
-
 
 #---------------------------------------------------------------
-# 4. Processing workflow
+# 3. Processing workflow
 #---------------------------------------------------------------
 
 # Set number of cores for parallel processing
@@ -103,41 +87,13 @@ source("analysis/tracking/scr/oceanmask.R")
 # We select individuals that remain within the study area.
 source("analysis/tracking/scr/simulations.R")
 
-
-# Step 6. Extract environmental data
-# Note: First requires creating a daily stack
-
-# # Observed
-# input_folder <- "L2_locations"
-# output_folder <- "L3_locations"
-# plotTS <- TRUE
-# source("analysis/tracking/scr/extract_stack.R")
-# 
-# # Simulated
-# cores <- 10  # reduce number of cores
-# input_folder <- "L2_simulations"
-# output_folder <- "L3_simulations"
-# plotTS <- FALSE
-# source("analysis/tracking/scr/extract_stack.R")
-
-# Step 7. Assess the number of simulations accounting for their environmental space
-# source("analysis/tracking/scr/assess_enviro_space.R")
-
-# Step 8. Prepare data for habitat models
-# combines presence/absence
-# select fields (consider those to identify different stages/colonies if needed)
-# select number of simulations
-#sim_n <- 30  # number of simulations to subset from the total
-#source("analysis/tracking/scr/combine_observations.R")
-
-
-# Generate Presence-Absence data eliminating overlap between observations
+# Step 6. Generate Presence-Absence data eliminating overlap between observations
 cores <- 50
 res <- 0.1  # size of spatial bin, in decimal degrees
 temporal_thrs <- 2  # length of temporal bin, in days
 sim_n <- 50  # select number of simulations to use
-source("analysis/tracking/scr/pres_abs_v3.R")
+source("analysis/tracking/scr/pres_abs.R")
  
-# # Extract environmental data
+# Step 7. Extract environmental data
 stack_repo <- paste0(output_data, "/stack_daily")
 source("analysis/tracking/scr/extract_stack_presabs.R")

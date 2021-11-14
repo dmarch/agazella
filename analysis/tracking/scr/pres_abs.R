@@ -9,19 +9,10 @@
 
 
 
-source("../movemed-multispecies/scr/fun_survey.R")
 
 
-# Set parameters for generating pseudoabsences
-res <- 0.05  # size of spatial bin, in decimal degrees
-temporal_thrs <- 1  # length of temporal bin, in days
-sim_n <- 30  # number of simulations to subset from the total
 
-#---------------------------------------------------------------
-# Prepare cluster
-#---------------------------------------------------------------
-#cl <- makeCluster(cores)
-#registerDoParallel(cl)
+
 
 
 #---------------------------------------------------------------
@@ -34,33 +25,59 @@ outdir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 
+
 #---------------------------------------------------------------
-# 2. Import oceanmask
+# 2. Import presence and absences
 #---------------------------------------------------------------
 
-# Import oceanmask
-oceanmask <- raster( paste0(output_data, "/stack_daily/2019/02/20190220_enviro.grd"))
-grid <- oceanmask+0  # this makes the raster to be in memory and make simulations faster
+
+# Presence data (observed state-space models)
+loc_files <- list.files(ssm_data, full.names = TRUE, pattern="L2_locations.csv")
+pres <- readTrack(loc_files)
+pres$date <- as.Date(pres$date)  # transform date-time into date format
+
+# Absence data (simulations)
+loc_files <- list.files(sim_data, full.names = TRUE, pattern="L2_locations.csv")
+abs <- readTrack(loc_files)
+
+# Filter data by number of simulations
+abs <- filter(abs, nsim <= sim_n)
+
+# transform date-time into date format
+abs$date <- as.Date(abs$date)
+
+
+
+#---------------------------------------------------------------
+# 2. Generate oceanmask
+#---------------------------------------------------------------
+# Create a ocean mask to grid all observations
+# It is based on the following parameters:
+# res: resolution
+# ext: extent estimated from the data
+
+# define bounding box
+xmin <- floor(min(min(pres$lon), min(abs$lon)))
+xmax <- ceiling(max(max(pres$lon), max(abs$lon)))
+ymin <- floor(min(min(pres$lat), min(abs$lat)))
+ymax <- ceiling(max(max(pres$lat), max(abs$lat)))
+ext <- extent(xmin, xmax, ymin, ymax)
+
+#create grid
+grid <- raster(ext, res = res, crs = crs("+proj=longlat +datum=WGS84"))
 
 
 #---------------------------------------------------------------
 # 3. Generate presences
 #---------------------------------------------------------------
 
-# Presence data (observed state-space models)
-loc_files <- list.files(ssm_data, full.names = TRUE, pattern="L2_locations.csv")
-pres <- readTrack(loc_files)
-
-# transform date-time into date format
-pres$date <- as.Date(pres$date)
-
 # Extract cell ID from raster for each observation
 pres$cell <- cellFromXY(grid, cbind(pres$lon, pres$lat))
 
 # Transform observation to presence by cell and date
 cpres <- pres %>%
-  group_by(cell, date) %>%
-  summarize(occ = 1,
+  dplyr::group_by(id, cell, date) %>%
+  dplyr::summarize(occ = 1,
             n = n())
 
 # Get raster coordinates
@@ -73,23 +90,13 @@ cpres$lat <- xy[,"y"]
 # 4. Generate absences
 #---------------------------------------------------------------
 
-# Absence data (simulations)
-loc_files <- list.files(sim_data, full.names = TRUE, pattern="L2_locations.csv")
-abs <- readTrack(loc_files)
-
-# Filter data by number of simulations
-abs <- filter(abs, nsim <= sim_n)
-
-# transform date-time into date format
-abs$date <- as.Date(abs$date)
-
 # Extract cell ID from raster for each observation
 abs$cell <- cellFromXY(grid, cbind(abs$lon, abs$lat))
 
 # Transform observation to absence by cell and date
 cabs <- abs %>%
-  group_by(cell, date) %>%
-  summarize(occ = 0,
+  dplyr::group_by(id, cell, date) %>%
+  dplyr::summarize(occ = 0,
             n = n())
 
 # Get raster coordinates
@@ -103,28 +110,52 @@ cabs$lat <- xy[,"y"]
 #--------------------------------------------------------------------------
 # FILTER OUT ABSENCES BY SPATIAL AND TEMPORAL CRITERIA
 # We overlap absence with the presence bins. If there was a presence, we remove such absence
-# separate non-overlappingabsence and presence locations
+# separate non-overlapping absence and presence locations
 #--------------------------------------------------------------------------
 
+
+# list unique ids
+id_list <- unique(cabs$id)
+
 # Register number of cores to use in parallel
-cl <- parallel::makeCluster(10) # 10 cores work at around 63% CPU (no major problem with RAM)
+cl <- parallel::makeCluster(cores) # 10 cores work at around 63% CPU (no major problem with RAM)
 registerDoParallel(cl)
 
-# for each absence, check if there is a presence in adjacent cells within the temporal period defined
-# if there is a match, remove absence. if not, keep it.
-# Note: This part of the code is computer intensive and time consuming. Using parallel works fine.
-keep <- foreach(i=1:nrow(cabs), .packages=c("dplyr", "raster")) %dopar% {
-  spt_overlap(abs_cell = cabs$cell[i], abs_date = cabs$date[i],
-              pres_df = cpres, temporal_thrs, grid)
+#create empty list
+cabs_list <- list()
+
+# sequential processing for each tag
+for(j in 1:length(id_list)){
+  
+  print(paste("Processing tag", j, "from", length(id_list)))
+  
+  # selected absences for a given animal id
+  jcabs <- dplyr::filter(cabs, id == id_list[j])
+  
+  # for each absence, check if there is a presence in adjacent cells within the temporal period defined
+  # if there is a match, remove absence. if not, keep it.
+  # Note: This part of the code is computer intensive and time consuming. Using parallel works fine.
+  keep <- foreach(i=1:nrow(jcabs), .packages=c("dplyr", "raster")) %dopar% {
+    spt_overlap(abs_cell = jcabs$cell[i], abs_date = jcabs$date[i],
+                pres_df = cpres, temporal_thrs, grid)
+  }
+  
+  # filter out absences that match presences
+  jcabs$keep <- unlist(keep)
+  jcabs <- filter(jcabs, keep == TRUE) %>%
+    dplyr::select(-keep)
+  
+  # append
+  cabs_list[[j]] <- jcabs
 }
+
+#combine absences
+cabs_all <- rbindlist(cabs_list)
 
 # Stop cluster
 parallel::stopCluster(cl)
 
-# filter out absences that match presences
-cabs$keep <- unlist(keep)
-cabs <- filter(cabs, keep == TRUE) %>%
-  dplyr::select(-keep)
+
 
 
 #--------------------------------------------------------------------------
@@ -132,9 +163,9 @@ cabs <- filter(cabs, keep == TRUE) %>%
 #--------------------------------------------------------------------------
 
 # combine presence and absence into a single data.frame and save
-comb <- rbind(cpres, cabs)
+comb <- rbind(data.frame(cpres), data.frame(cabs_all))
 comb$sp_code <- sp_code
-comb <- dplyr::select(comb, sp_code, cell, lon, lat, date, occ)
+comb <- dplyr::select(comb, sp_code, id, cell, lon, lat, date, occ)
 
 # export to species folder
 outfile <- paste0(outdir, "/", sp_code, "_L2_PresAbs.csv")
