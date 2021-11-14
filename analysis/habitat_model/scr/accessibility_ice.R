@@ -158,33 +158,3 @@ foreach(i=1:n.boot, .packages=c("splitstackshape", "scam")) %dopar% {
 ## stop clusters
 stopCluster(cl)
 
-# # plot
-# dfpred <- data.frame(EDGE = seq(round(min(dist$EDGE)), round(max(dist$EDGE)), 10))
-# dfpred$pre <- predict.scam(scamMod, newdata = dfpred, type="response")
-# plot(dfpred$EDGE, dfpred$pre, type="l")
-
-
-#-----------------------------------------------------------------
-# Predict model
-#-----------------------------------------------------------------
-
-
-# ## Predict model to each colony
-# s$D2COL <- s$D2COL/1000
-# accessibility <- predict(s, scamMod, type="response")
-# 
-# pred2 <- pred_med * accessibility
-# pred_cir2 <- pred_cir * accessibility
-# 
-# plot(pred2, main = paste(sp_name, "   Model:", mod_code, "\n", date), zlim=c(0,1), col = viridis(100))
-# plot(land, col="grey80", border="grey60", add=TRUE)
-# text(x = -3.5, y = 44, labels = date)
-# box()
-# 
-# 
-# #-----------------------------------------------------------------
-# # Export
-# #-----------------------------------------------------------------
-# 
-# # Export raster
-# writeRaster(accessibility, paste0(output_data, "/", sp_code, "_access.grd"), bandorder='BIL', overwrite=TRUE)

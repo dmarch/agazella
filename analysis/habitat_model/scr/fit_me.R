@@ -10,7 +10,7 @@ mod_code <- "me"
 #---------------------------------------------------------------
 # 1. Set data repository
 #---------------------------------------------------------------
-indir <- paste0(output_data, "/tracking/", sp_code, "/PresAbs/")
+indir <- paste0(output_data, "/habitat-model/", sp_code, "/")
 outdir <- paste(output_data, "habitat-model", sp_code, mod_code, sep="/")
 if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
@@ -21,7 +21,7 @@ if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
 #-----------------------------------------------------------------
 
 # Import observations
-obs_file <- paste0(indir, sp_code, "_observations.csv")
+obs_file <- paste0(indir, sp_code, "_train.csv")
 data <- read.csv(obs_file)
 
 # Transform skewed variables
@@ -32,8 +32,6 @@ data$CHL <- log1p(data$CHL)
 #-----------------------------------------------------------------
 # MaxEnt model
 #-----------------------------------------------------------------
-
-
 
 set.seed(131)
 
